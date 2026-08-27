@@ -701,35 +701,42 @@ MainComponent::MainComponent()
 
     phaseRandomSlider.onValueChange = [this]
         {
-            phaseRandom =
-                (float)phaseRandomSlider.getValue();
+            phaseRandom = (float)phaseRandomSlider.getValue();
 
             for (auto& voice : voices)
             {
-                voice.oscillator.setPhaseRandom(
-                    phaseRandom
-                );
+                voice.oscillator.setPhaseRandom(phaseRandom);
             }
         };
 
-    unisonDetuneLabel.setText(
-        "Detune",
-        juce::dontSendNotification
-    );
+    stereoSpreadSlider.setRange(0.0, 1.0, 0.01);
+    stereoSpreadSlider.setValue(0.0);
+    stereoSpreadSlider.setSliderStyle(juce::Slider::LinearVertical);
+    addAndMakeVisible(stereoSpreadSlider);
+
+    stereoSpreadSlider.onValueChange = [this]
+        {
+            stereoSpread = (float)stereoSpreadSlider.getValue();
+
+            for (auto& voice : voices)
+            {
+                voice.oscillator.setStereoSpread(stereoSpread);
+            }
+        };
+
+    stereoSpreadLabel.setText("Stereo", juce::dontSendNotification);
+    phaseRandomLabel.setJustificationType(juce::Justification::centred);
+
+    unisonDetuneLabel.setText("Detune",juce::dontSendNotification);
     unisonDetuneLabel.setJustificationType(juce::Justification::centred);
 
-    unisonMixLabel.setText(
-        "Mix",
-        juce::dontSendNotification
-    );
+    unisonMixLabel.setText("Mix",juce::dontSendNotification);
     unisonMixLabel.setJustificationType(juce::Justification::centred);
 
-    phaseRandomLabel.setText(
-        "Phase",
-        juce::dontSendNotification
-    );
-
+    phaseRandomLabel.setText("Phase",juce::dontSendNotification);
     phaseRandomLabel.setJustificationType(juce::Justification::centred);
+
+    addAndMakeVisible(stereoSpreadLabel);
     addAndMakeVisible(unisonDetuneLabel);
     addAndMakeVisible(unisonMixLabel);
     addAndMakeVisible(phaseRandomLabel);
@@ -820,10 +827,12 @@ void MainComponent::resized()
     unisonDetuneSlider.setBounds(500, 200, 40, 120);
     unisonMixSlider.setBounds(550, 200, 40, 120);
     phaseRandomSlider.setBounds(600, 200, 40, 120);
+    stereoSpreadSlider.setBounds(650, 200, 40, 120);
 
     unisonDetuneLabel.setBounds(500, 180, 50, 20);
     unisonMixLabel.setBounds(550, 180, 50, 20);
     phaseRandomLabel.setBounds(600, 180, 50, 20);
+    stereoSpreadLabel.setBounds(650, 180, 50, 20);
 
     // This is called when the MainContentComponent is resized.
     // If you add any child components, this is where you should
@@ -915,7 +924,8 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
 
     for (int sample = 0; sample < numSamples; ++sample)
     {
-        float value = 0.0f;
+        float leftValue = 0.0f;
+        float rightValue = 0.0f;
 
         // Generate one sample from every active voice
         for (auto& voice : voices)
@@ -924,32 +934,36 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
                 continue;
 
             //oscilator
-            float voiceValue = voice.oscillator.getNextSample();
+            float voiceLeft = 0.0f;
+            float voiceRight = 0.0f;
+
+            voice.oscillator.getNextSample(voiceLeft, voiceRight);
+
             //ADSR
-            voiceValue *= voice.envelope.getNextSample();
+            float envelope = voice.envelope.getNextSample();
+
+            voiceLeft *= envelope;
+            voiceRight *= envelope;
 
             //FILTER
-            float envelopeValue =
-                voice.filterEnvelope.getNextSample();
+            float envelopeValue = voice.filterEnvelope.getNextSample();
 
 
-            float baseCutoff =
-                (float)cutoffSlider.getValue();
+            float baseCutoff = (float)cutoffSlider.getValue();
 
-            float envelopeAmount =
-                (float)filterEnvAmountSlider.getValue();
+            float envelopeAmount = (float)filterEnvAmountSlider.getValue();
 
-            float modulatedCutoff =
-                baseCutoff
-                + envelopeValue * envelopeAmount;
+            float modulatedCutoff = baseCutoff + envelopeValue * envelopeAmount;
 
             voice.filter.setCutoff(modulatedCutoff);
 
-            voiceValue =
-                voice.filter.processSample(voiceValue);
+            voiceLeft = voice.filter.processSample(voiceLeft,0);
+
+            voiceRight = voice.filter.processSample(voiceRight,1);
 
             //MIX
-            value += voiceValue;
+            leftValue += voiceLeft;
+            rightValue += voiceRight;
 
             //deactivate voice after release
             if (!voice.envelope.isActive())
@@ -960,7 +974,8 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
         }
 
         // Apply master volume
-        value *= gain;
+        leftValue *= gain;
+        rightValue *= gain;
 
         // Panning
         float panAngle =
@@ -971,12 +986,11 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
         float rightGain = std::sin(panAngle);
 
         //limiter and safeguard
-        if (!std::isfinite(value))
+        if (!std::isfinite(leftValue) || !std::isfinite(rightValue))
         {
-            value = 0.0f;
+            leftValue = 0.0f;
+            rightValue = 0.0f;
         }
-
-        value = juce::jlimit(-1.0f, 1.0f, value);
 
         // Write to output channels
         if (buffer->getNumChannels() >= 2)
@@ -984,13 +998,13 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
             buffer->setSample(
                 0,
                 bufferToFill.startSample + sample,
-                value * leftGain
+                leftValue * leftGain
             );
 
             buffer->setSample(
                 1,
                 bufferToFill.startSample + sample,
-                value * rightGain
+                rightValue * rightGain
             );
         }
     }

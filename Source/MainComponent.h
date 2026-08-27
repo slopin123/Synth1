@@ -80,6 +80,7 @@ private:
     float unisonDetune = 0.0f;
     float unisonMix = 0.0f;
     float phaseRandom = 0.0f;
+    float stereoSpread = 0.0f;
 
     float filterCutoff = 10000.0f;
     float filterEnvAmount = 3000.0f;
@@ -146,10 +147,12 @@ private:
     juce::Slider unisonDetuneSlider;
     juce::Slider unisonMixSlider;
     juce::Slider phaseRandomSlider;
+    juce::Slider stereoSpreadSlider;
 
     juce::Label unisonDetuneLabel;
     juce::Label unisonMixLabel;
     juce::Label phaseRandomLabel;
+    juce::Label stereoSpreadLabel;
     
     
     

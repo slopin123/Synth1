@@ -99,6 +99,7 @@ void Oscillator::reset()
             voice.phase =
                 random.nextFloat() * phaseRandom;
         }
+        DBG("Phase = " << voice.phase);
     }
 }
 
@@ -129,24 +130,34 @@ void Oscillator::setUnisonMix(float amount)
 
 void Oscillator::setPhaseRandom(float amount)
 {
-    phaseRandom =
-        juce::jlimit(0.0f, 1.0f, amount);
+    phaseRandom = juce::jlimit(0.0f, 1.0f, amount);
 }
 
-//wavegen
-float Oscillator::getNextSample()
+void Oscillator::setStereoSpread(float amount)
 {
+    stereoSpread = juce::jlimit(0.0f, 1.0f, amount);
+}
+
+//wavegen 1.1
+void Oscillator::getNextSample(float& left, float& right)
+{
+    left = 0.0f;
+    right = 0.0f;
+
     if (unisonVoices.empty())
-        return 0.0f;
-
-    float centerSum = 0.0f;
-    float extraSum = 0.0f;
-
-    int centerCount = 0;
-    int extraCount = 0;
+        return;
 
     const int count =
         (int)unisonVoices.size();
+
+    float centerLeft = 0.0f;
+    float centerRight = 0.0f;
+
+    float extraLeft = 0.0f;
+    float extraRight = 0.0f;
+
+    int centerCount = 0;
+    int extraCount = 0;
 
     for (int i = 0; i < count; ++i)
     {
@@ -157,6 +168,8 @@ float Oscillator::getNextSample()
             (float)sampleRate;
 
         float sample = 0.0f;
+
+        // Generate waveform
 
         switch (waveform)
         {
@@ -216,50 +229,83 @@ float Oscillator::getNextSample()
             break;
         }
 
-        // Determine whether this is a center
-        // or extra oscillator.
+        // Determine center / extra
+
+        bool isCenterVoice = false;
 
         if (count % 2 == 1)
         {
-            // Odd number:
-            // one oscillator exactly in the middle
-
             int centerIndex =
                 count / 2;
 
-            if (i == centerIndex)
-            {
-                centerSum += sample;
-                centerCount++;
-            }
-            else
-            {
-                extraSum += sample;
-                extraCount++;
-            }
+            isCenterVoice =
+                (i == centerIndex);
         }
         else
         {
-            // Even number:
-            // two oscillators around the center
-
-            int centerIndex1 =
+            int leftCenterIndex =
                 count / 2 - 1;
 
-            int centerIndex2 =
+            int rightCenterIndex =
                 count / 2;
 
-            if (i == centerIndex1 ||
-                i == centerIndex2)
-            {
-                centerSum += sample;
-                centerCount++;
-            }
-            else
-            {
-                extraSum += sample;
-                extraCount++;
-            }
+            isCenterVoice =
+                (i == leftCenterIndex ||
+                    i == rightCenterIndex);
+        }
+
+        // Calculate stereo position
+
+
+        float panPosition = 0.0f;
+
+        if (count > 1)
+        {
+            panPosition =
+                (float)i /
+                (float)(count - 1);
+
+            panPosition =
+                panPosition * 2.0f - 1.0f;
+
+            panPosition *= stereoSpread;
+        }
+
+        // Equal-power panning
+
+        float angle =
+            (panPosition + 1.0f)
+            * 0.25f
+            * juce::MathConstants<float>::pi;
+
+        float leftGain =
+            std::cos(angle);
+
+        float rightGain =
+            std::sin(angle);
+
+        float leftSample =
+            sample * leftGain;
+
+        float rightSample =
+            sample * rightGain;
+
+        // Add to appropriate group
+
+
+        if (isCenterVoice)
+        {
+            centerLeft += leftSample;
+            centerRight += rightSample;
+
+            centerCount++;
+        }
+        else
+        {
+            extraLeft += leftSample;
+            extraRight += rightSample;
+
+            extraCount++;
         }
 
         // Advance phase
@@ -270,33 +316,213 @@ float Oscillator::getNextSample()
             voice.phase -= 1.0;
     }
 
-    // Normalize each group
-
-    float centerMix = 0.0f;
-    float extraMix = 0.0f;
+    // Normalize groups
 
     if (centerCount > 0)
     {
-        centerMix =
-            centerSum /
+        centerLeft /=
+            (float)centerCount;
+
+        centerRight /=
             (float)centerCount;
     }
 
     if (extraCount > 0)
     {
-        extraMix =
-            extraSum /
+        extraLeft /=
+            (float)extraCount;
+
+        extraRight /=
             (float)extraCount;
     }
 
-    // Crossfade between center and extras
+    // Handle 1/2 voice case
+
 
     if (extraCount == 0)
     {
-        return centerMix;
+        left = centerLeft;
+        right = centerRight;
+        return;
     }
 
-    return
-        centerMix * (1.0f - unisonMix)
-        + extraMix * unisonMix;
+    // Unison Mix
+    
+
+    left =
+        centerLeft * (1.0f - unisonMix)
+        + extraLeft * unisonMix;
+
+    right =
+        centerRight * (1.0f - unisonMix)
+        + extraRight * unisonMix;
 }
+
+
+//wavegen
+//float Oscillator::getNextSample()
+//{
+//    if (unisonVoices.empty())
+//        return 0.0f;
+//
+//    float centerSum = 0.0f;
+//    float extraSum = 0.0f;
+//
+//    int centerCount = 0;
+//    int extraCount = 0;
+//
+//    const int count =
+//        (int)unisonVoices.size();
+//
+//    for (int i = 0; i < count; ++i)
+//    {
+//        auto& voice = unisonVoices[i];
+//
+//        float phaseIncrement =
+//            voice.frequency /
+//            (float)sampleRate;
+//
+//        float sample = 0.0f;
+//
+//        switch (waveform)
+//        {
+//        case 1: // Sine
+//
+//            sample = std::sin(
+//                (float)voice.phase
+//                * 2.0f
+//                * juce::MathConstants<float>::pi
+//            );
+//
+//            break;
+//
+//
+//        case 2: // Saw
+//
+//            sample =
+//                2.0f * (float)voice.phase - 1.0f;
+//
+//            sample -= polyBLEP(
+//                (float)voice.phase,
+//                phaseIncrement
+//            );
+//
+//            break;
+//
+//
+//        case 3: // Square
+//
+//            sample =
+//                voice.phase < 0.5
+//                ? 1.0f
+//                : -1.0f;
+//
+//            sample += polyBLEP(
+//                (float)voice.phase,
+//                phaseIncrement
+//            );
+//
+//            sample -= polyBLEP(
+//                (float)std::fmod(
+//                    voice.phase + 0.5,
+//                    1.0
+//                ),
+//                phaseIncrement
+//            );
+//
+//            break;
+//
+//
+//        case 4: // Noise
+//
+//            sample =
+//                juce::Random::getSystemRandom()
+//                .nextFloat() * 2.0f - 1.0f;
+//
+//            break;
+//        }
+//
+//        // Determine whether this is a center
+//        // or extra oscillator.
+//
+//        if (count % 2 == 1)
+//        {
+//            // Odd number:
+//            // one oscillator exactly in the middle
+//
+//            int centerIndex =
+//                count / 2;
+//
+//            if (i == centerIndex)
+//            {
+//                centerSum += sample;
+//                centerCount++;
+//            }
+//            else
+//            {
+//                extraSum += sample;
+//                extraCount++;
+//            }
+//        }
+//        else
+//        {
+//            // Even number:
+//            // two oscillators around the center
+//
+//            int centerIndex1 =
+//                count / 2 - 1;
+//
+//            int centerIndex2 =
+//                count / 2;
+//
+//            if (i == centerIndex1 ||
+//                i == centerIndex2)
+//            {
+//                centerSum += sample;
+//                centerCount++;
+//            }
+//            else
+//            {
+//                extraSum += sample;
+//                extraCount++;
+//            }
+//        }
+//
+//        // Advance phase
+//
+//        voice.phase += phaseIncrement;
+//
+//        if (voice.phase >= 1.0)
+//            voice.phase -= 1.0;
+//    }
+//
+//    // Normalize each group
+//
+//    float centerMix = 0.0f;
+//    float extraMix = 0.0f;
+//
+//    if (centerCount > 0)
+//    {
+//        centerMix =
+//            centerSum /
+//            (float)centerCount;
+//    }
+//
+//    if (extraCount > 0)
+//    {
+//        extraMix =
+//            extraSum /
+//            (float)extraCount;
+//    }
+//
+//    // Crossfade between center and extras
+//
+//    if (extraCount == 0)
+//    {
+//        return centerMix;
+//    }
+//
+//    return
+//        centerMix * (1.0f - unisonMix)
+//        + extraMix * unisonMix;
+//}

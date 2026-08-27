@@ -31,8 +31,10 @@ void SimpleLP::setResonance(float newResonance)
         + 0.85f * (1.0f - resonance);
 }
 
-float SimpleLP::processSample(float input)
+float SimpleLP::processSample(float input, int channel)
 {
+    channel = juce::jlimit(0, 1, channel);
+
     float coefficient =
         1.0f - std::exp(
             -2.0f
@@ -43,25 +45,28 @@ float SimpleLP::processSample(float input)
 
     float high =
         input
-        - low
-        - damping * band;
+        - low[channel]
+        - damping * band[channel];
 
     float newBand =
-        band
+        band[channel]
         + coefficient * high;
 
     float newLow =
-        low
+        low[channel]
         + coefficient * newBand;
 
-    band = newBand;
-    low = newLow;
+    band[channel] = newBand;
+    low[channel] = newLow;
 
-    return low;
+    return newLow;
 }
 
 void SimpleLP::reset()
 {
-    low = 0.0f;
-    band = 0.0f;
+    low[0] = 0.0f;
+    low[1] = 0.0f;
+
+    band[0] = 0.0f;
+    band[1] = 0.0f;
 }
