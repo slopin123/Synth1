@@ -1,0 +1,27 @@
+
+# Build folders
+Builds/
+build/
+cmake-build-*/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.vcxproj.user
+
+# Xcode
+DerivedData/
+*.xcuserstate
+
+# CLion
+.idea/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# JUCE generated/build files
+JuceLibraryCode/
