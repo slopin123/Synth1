@@ -18,6 +18,7 @@ public:
     void setStereoSpread(float amount);
 
     void getNextSample(float& left, float& right);
+    float getVoicePosition(int index) const;
 
     void reset();
 

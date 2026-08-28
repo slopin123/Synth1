@@ -638,6 +638,15 @@ MainComponent::MainComponent()
     unisonVoicesBox.addItem("5", 5);
     unisonVoicesBox.addItem("6", 6);
     unisonVoicesBox.addItem("7", 7);
+    unisonVoicesBox.addItem("8", 8);
+    unisonVoicesBox.addItem("9", 9);
+    unisonVoicesBox.addItem("10", 10);
+    unisonVoicesBox.addItem("11", 11);
+    unisonVoicesBox.addItem("12", 12);
+    unisonVoicesBox.addItem("13", 13);
+    unisonVoicesBox.addItem("14", 14);
+    unisonVoicesBox.addItem("15", 15);
+    unisonVoicesBox.addItem("16", 16);
 
     unisonVoicesBox.setSelectedId(1);
 
@@ -850,12 +859,15 @@ void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRat
 {
     // This function will be called when the audio device is started, or when
     // its settings (i.e. sample rate, block size, etc) are changed.
+
     deviceSampleRate = sampleRate;
+
     for (auto& voice : voices)
     {
-        voice.filterEnvelope.prepare(sampleRate);
+        
+        voice.filterEnvelope.prepare(deviceSampleRate);
 
-        voice.filter.prepare(sampleRate);
+        voice.filter.prepare(deviceSampleRate);
 
         voice.oscillator.prepare(deviceSampleRate);
 
