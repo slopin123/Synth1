@@ -1,7 +1,7 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include "FilterEnvelope.h"
+#include "Envelope.h"
 #include "SimpleLP.h"
 #include <set>
 #include "Oscillator.h"
@@ -18,17 +18,16 @@ class Voice
 public:
     
     int midiNote = 0;
-    float filterEnvelopeAmount = 0.0f;
+    float EnvelopeAmount = 0.0f;
 
     Oscillator oscillator;
 
     bool active = false;
     bool noteHeld = false;
 
-    juce::ADSR envelope;
-
     SimpleLP filter;
-    FilterEnvelope filterEnvelope;
+    Envelope amplitudeEnvelope;
+    Envelope filterEnvelope;
 };
 
 class MainComponent : public juce::AudioAppComponent,
@@ -92,7 +91,6 @@ private:
     juce::MidiKeyboardState midiKeyboardState;
     std::unique_ptr<juce::MidiInput> midiInput;
 
-    juce::ADSR::Parameters adsrParameters;
 
     juce::Slider frequencySlider;
     juce::Slider volumeSlider;
@@ -100,10 +98,33 @@ private:
     juce::Label frequencyLabel;
     juce::Label volumeLabel;
     juce::ComboBox waveformBox;
+    juce::ComboBox octaveBox;
+    juce::ComboBox envelopeSelectorBox;
     
+    // amplitude adsr
+    // Sliders
+    juce::Slider amplitudeAttackSlider;
+    juce::Slider amplitudeDecaySlider;
+    juce::Slider amplitudeSustainSlider;
+    juce::Slider amplitudeReleaseSlider;
 
+    juce::Slider amplitudeAttackCurveSlider;
+    juce::Slider amplitudeDecayCurveSlider;
+    juce::Slider amplitudeReleaseCurveSlider;
 
-    //filter
+    juce::Slider amplitudeEnvAmountSlider;
+
+    // Labels
+    juce::Label amplitudeAttackLabel;
+    juce::Label amplitudeDecayLabel;
+    juce::Label amplitudeSustainLabel;
+    juce::Label amplitudeReleaseLabel;
+
+    juce::Label amplitudeAttackCurveLabel;
+    juce::Label amplitudeDecayCurveLabel;
+    juce::Label amplitudeReleaseCurveLabel;
+
+    // filter
     juce::ComboBox poleBox;
 
     juce::Slider cutoffSlider;
@@ -115,15 +136,7 @@ private:
     juce::Slider filterEnvAmountSlider;
     juce::Label filterEnvAmountLabel;
 
-    //adsr
-    juce::Slider attackSlider;
-    juce::Slider decaySlider;
-    juce::Slider sustainSlider;
-    juce::Slider releaseSlider;
-    juce::Label attackLabel;
-    juce::Label decayLabel;
-    juce::Label sustainLabel;
-    juce::Label releaseLabel;
+    // filter adsr
 
     juce::Slider filterAttackSlider;
     juce::Slider filterDecaySlider;
@@ -141,7 +154,7 @@ private:
     juce::Label filterDecayCurveLabel;
     juce::Label filterReleaseCurveLabel;
 
-    //Unison
+    // Unison
     juce::ComboBox unisonVoicesBox;
 
     juce::Slider unisonDetuneSlider;

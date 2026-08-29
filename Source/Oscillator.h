@@ -16,6 +16,7 @@ public:
     void setUnisonMix(float amount);
     void setPhaseRandom(float amount);
     void setStereoSpread(float amount);
+    void setOctave(int newOctave);
 
     void getNextSample(float& left, float& right);
     float getVoicePosition(int index) const;
@@ -36,6 +37,7 @@ private:
 
     double sampleRate = 44100.0;
     double frequency = 440.0;
+    double octave = 1.0f;
     int waveform = 0;
 
     //unison

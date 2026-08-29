@@ -1,6 +1,6 @@
 #pragma once
 
-class FilterEnvelope
+class Envelope
 {
 public:
     void prepare(double sampleRate);
@@ -13,6 +13,8 @@ public:
     void setAttackCurve(float curve);
     void setDecayCurve(float curve);
     void setReleaseCurve(float curve);
+
+    bool isActive() const;
 
     void noteOn();
     void noteOff();
@@ -45,6 +47,7 @@ private:
     float releaseCurve = 0.0f;
 
     float value = 0.0f;
-    float stagePosition = 0.0f;
+    float position = 0.0f;
+    float releaseStartValue = 0.0f;
 
 };

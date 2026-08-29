@@ -8,159 +8,161 @@ MainComponent::MainComponent()
     setSize (800, 600);
     setAudioChannels(0, 2);
 
-    adsrParameters.attack = 0.01f;
-    adsrParameters.decay = 0.1f;
-    adsrParameters.sustain = 0.7f;
-    adsrParameters.release = 0.2f;
-
     //ADSR
-    attackSlider.setSliderStyle(juce::Slider::LinearVertical);
-    attackSlider.setTextBoxStyle(
-        juce::Slider::TextBoxBelow,
-        false,
-        50,
-        18
-    );
+    // amplitude Attack
+    amplitudeAttackLabel.setText("Attack", juce::dontSendNotification);
+    amplitudeAttackLabel.setJustificationType(juce::Justification::centred);
+    amplitudeAttackSlider.setSliderStyle(juce::Slider::LinearVertical);
+    amplitudeAttackSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
+    amplitudeAttackSlider.setRange(0.001, 5.0, 0.001);
+    amplitudeAttackSlider.setValue(0.01);
 
-    attackSlider.setRange(0.001, 5.0, 0.001);
-    attackSlider.setValue(adsrParameters.attack);
-    attackSlider.setTextValueSuffix(" s");
+    // amplitude Decay
+    amplitudeDecayLabel.setText("Decay", juce::dontSendNotification);
+    amplitudeDecayLabel.setJustificationType(juce::Justification::centred);
+    amplitudeDecaySlider.setSliderStyle(juce::Slider::LinearVertical);
+    amplitudeDecaySlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
+    amplitudeDecaySlider.setRange(0.001, 5.0, 0.001);
+    amplitudeDecaySlider.setValue(0.2);
 
-    attackSlider.onValueChange = [this]
+    // amplitude Sustain
+    amplitudeSustainLabel.setText("Sustain", juce::dontSendNotification);
+    amplitudeSustainLabel.setJustificationType(juce::Justification::centred);
+    amplitudeSustainSlider.setSliderStyle(juce::Slider::LinearVertical);
+    amplitudeSustainSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
+    amplitudeSustainSlider.setRange(0.0, 1.0, 0.01);
+    amplitudeSustainSlider.setValue(0.5);
+
+    // amplitude Release
+    amplitudeReleaseLabel.setText("Release", juce::dontSendNotification);
+    amplitudeReleaseLabel.setJustificationType(juce::Justification::centred);
+    amplitudeReleaseSlider.setSliderStyle(juce::Slider::LinearVertical);
+    amplitudeReleaseSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
+    amplitudeReleaseSlider.setRange(0.001, 5.0, 0.001);
+    amplitudeReleaseSlider.setValue(0.2);
+
+    // amplitude Attack Curve
+    amplitudeAttackCurveLabel.setText("Attack Curve", juce::dontSendNotification);
+    amplitudeAttackCurveLabel.setJustificationType(juce::Justification::centred);
+    amplitudeAttackCurveSlider.setSliderStyle(juce::Slider::LinearVertical);
+    amplitudeAttackCurveSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
+    amplitudeAttackCurveSlider.setRange(-1.0, 1.0, 0.01);
+    amplitudeAttackCurveSlider.setValue(0.0);
+
+    // amplitude Decay Curve
+    amplitudeDecayCurveLabel.setText("Decay Curve", juce::dontSendNotification);
+    amplitudeDecayCurveLabel.setJustificationType(juce::Justification::centred);
+    amplitudeDecayCurveSlider.setSliderStyle(juce::Slider::LinearVertical);
+    amplitudeDecayCurveSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
+    amplitudeDecayCurveSlider.setRange(-1.0, 1.0, 0.01);
+    amplitudeDecayCurveSlider.setValue(0.0);
+
+
+    // amplitude Release Curve
+    amplitudeReleaseCurveLabel.setText("Release Curve", juce::dontSendNotification);
+    amplitudeReleaseCurveLabel.setJustificationType(juce::Justification::centred);
+    amplitudeReleaseCurveSlider.setSliderStyle(juce::Slider::LinearVertical);
+    amplitudeReleaseCurveSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
+    amplitudeReleaseCurveSlider.setRange(-1.0, 1.0, 0.01);
+    amplitudeReleaseCurveSlider.setValue(0.0);
+
+
+    addAndMakeVisible(amplitudeAttackCurveSlider);
+    addAndMakeVisible(amplitudeDecayCurveSlider);
+    addAndMakeVisible(amplitudeReleaseCurveSlider);
+    addAndMakeVisible(amplitudeAttackCurveLabel);
+    addAndMakeVisible(amplitudeDecayCurveLabel);
+    addAndMakeVisible(amplitudeReleaseCurveLabel);
+
+    addAndMakeVisible(amplitudeAttackSlider);
+    addAndMakeVisible(amplitudeDecaySlider);
+    addAndMakeVisible(amplitudeSustainSlider);
+    addAndMakeVisible(amplitudeReleaseSlider);
+    addAndMakeVisible(amplitudeAttackLabel);
+    addAndMakeVisible(amplitudeDecayLabel);
+    addAndMakeVisible(amplitudeSustainLabel);
+    addAndMakeVisible(amplitudeReleaseLabel);
+
+    amplitudeAttackSlider.onValueChange = [this]
         {
-            adsrParameters.attack =
-                (float)attackSlider.getValue();
+            float value = (float)amplitudeAttackSlider.getValue();
 
             for (auto& voice : voices)
-                voice.envelope.setParameters(adsrParameters);
+                voice.amplitudeEnvelope.setAttack(value);
         };
 
-    attackLabel.setText("Attack", juce::dontSendNotification);
 
-    addAndMakeVisible(attackSlider);
-    addAndMakeVisible(attackLabel);
-
-    decaySlider.setSliderStyle(juce::Slider::LinearVertical);
-    decaySlider.setTextBoxStyle(
-        juce::Slider::TextBoxBelow,
-        false,
-        50,
-        18
-    );
-
-    decaySlider.setRange(0.001, 5.0, 0.001);
-    decaySlider.setValue(adsrParameters.decay);
-    decaySlider.setTextValueSuffix(" s");
-
-    decaySlider.onValueChange = [this]
+    amplitudeDecaySlider.onValueChange = [this]
         {
-            adsrParameters.decay =
-                (float)decaySlider.getValue();
+            float value = (float)amplitudeDecaySlider.getValue();
 
             for (auto& voice : voices)
-                voice.envelope.setParameters(adsrParameters);
+                voice.amplitudeEnvelope.setDecay(value);
         };
 
-    decayLabel.setText("Decay", juce::dontSendNotification);
 
-    addAndMakeVisible(decaySlider);
-    addAndMakeVisible(decayLabel);
-
-    sustainSlider.setSliderStyle(juce::Slider::LinearVertical);
-    sustainSlider.setTextBoxStyle(
-        juce::Slider::TextBoxBelow,
-        false,
-        50,
-        18
-    );
-
-    sustainSlider.setRange(0.0, 1.0, 0.01);
-    sustainSlider.setValue(adsrParameters.sustain);
-
-    sustainSlider.onValueChange = [this]
+    amplitudeSustainSlider.onValueChange = [this]
         {
-            adsrParameters.sustain =
-                (float)sustainSlider.getValue();
+            float value = (float)amplitudeSustainSlider.getValue();
 
             for (auto& voice : voices)
-                voice.envelope.setParameters(adsrParameters);
+                voice.amplitudeEnvelope.setSustain(value);
         };
 
-    sustainLabel.setText("Sustain", juce::dontSendNotification);
 
-    addAndMakeVisible(sustainSlider);
-    addAndMakeVisible(sustainLabel);
-
-    releaseSlider.setSliderStyle(juce::Slider::LinearVertical);
-    releaseSlider.setTextBoxStyle(
-        juce::Slider::TextBoxBelow,
-        false,
-        50,
-        18
-    );
-
-    releaseSlider.setRange(0.001, 5.0, 0.001);
-    releaseSlider.setValue(adsrParameters.release);
-    releaseSlider.setTextValueSuffix(" s");
-
-    releaseSlider.onValueChange = [this]
+    amplitudeReleaseSlider.onValueChange = [this]
         {
-            adsrParameters.release =
-                (float)releaseSlider.getValue();
+            float value = (float)amplitudeReleaseSlider.getValue();
 
             for (auto& voice : voices)
-                voice.envelope.setParameters(adsrParameters);
+                voice.amplitudeEnvelope.setRelease(value);
         };
 
-    releaseLabel.setText("Release", juce::dontSendNotification);
 
-    addAndMakeVisible(releaseSlider);
-    addAndMakeVisible(releaseLabel);
+    amplitudeAttackCurveSlider.onValueChange = [this]
+        {
+            float value = (float)amplitudeAttackCurveSlider.getValue();
+
+            for (auto& voice : voices)
+                voice.amplitudeEnvelope.setAttackCurve(value);
+        };
+
+
+    amplitudeDecayCurveSlider.onValueChange = [this]
+        {
+            float value = (float)amplitudeDecayCurveSlider.getValue();
+
+            for (auto& voice : voices)
+                voice.amplitudeEnvelope.setDecayCurve(value);
+        };
+
+
+    amplitudeReleaseCurveSlider.onValueChange = [this]
+        {
+            float value = (float)amplitudeReleaseCurveSlider.getValue();
+
+            for (auto& voice : voices)
+                voice.amplitudeEnvelope.setReleaseCurve(value);
+        };
 
     //ADSR
     // 
     //Filter
-    cutoffSlider.setSliderStyle(
-        juce::Slider::RotaryHorizontalVerticalDrag
-    );
-
-    cutoffSlider.setTextBoxStyle(
-        juce::Slider::TextBoxBelow,
-        false,
-        70,
-        20
-    );
-
-    cutoffSlider.setRange(
-        20.0,
-        20000.0,
-        1.0
-    );
-
+    cutoffSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
+    cutoffSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 70, 20);
+    cutoffSlider.setRange(20.0, 20000.0, 1.0);
     cutoffSlider.setValue(filterCutoff);
-
-    cutoffSlider.setSkewFactorFromMidPoint(
-        1000.0
-    );
-
+    cutoffSlider.setSkewFactorFromMidPoint(1000.0);
     cutoffSlider.setTextValueSuffix(" Hz");
-
-    cutoffLabel.setText(
-        "Cutoff",
-        juce::dontSendNotification
-    );
-
-    cutoffLabel.setJustificationType(
-        juce::Justification::centred
-    );
+    cutoffLabel.setText("Cutoff", juce::dontSendNotification);
+    cutoffLabel.setJustificationType(juce::Justification::centred);
 
     addAndMakeVisible(cutoffSlider);
     addAndMakeVisible(cutoffLabel);
 
     cutoffSlider.onValueChange = [this]
         {
-            float filterCutoff =
-                (float)cutoffSlider.getValue();
+            float filterCutoff = (float)cutoffSlider.getValue();
 
             for (auto& voice : voices)
             {
@@ -187,38 +189,17 @@ MainComponent::MainComponent()
 
     addAndMakeVisible(poleBox);*/
 
-    resonanceLabel.setText(
-        "Resonance",
-        juce::dontSendNotification
-    );
+    resonanceLabel.setText("Resonance", juce::dontSendNotification);
+    resonanceLabel.setJustificationType(juce::Justification::centred);
 
-    resonanceLabel.setJustificationType(
-        juce::Justification::centred
-    );
-
-    resonanceSlider.setSliderStyle(
-        juce::Slider::RotaryHorizontalVerticalDrag
-    );
-
-    resonanceSlider.setTextBoxStyle(
-        juce::Slider::TextBoxBelow,
-        false,
-        70,
-        20
-    );
-
-    resonanceSlider.setRange(
-        0.0,
-        1.0,
-        0.01
-    );
-
+    resonanceSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
+    resonanceSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 70, 20);
+    resonanceSlider.setRange(0.0, 1.0, 0.01);
     resonanceSlider.setValue(0.0);
 
     resonanceSlider.onValueChange = [this]
         {
-            float resonance =
-                (float)resonanceSlider.getValue();
+            float resonance = (float)resonanceSlider.getValue();
 
             for (auto& voice : voices)
             {
@@ -229,268 +210,75 @@ MainComponent::MainComponent()
     addAndMakeVisible(resonanceSlider);
     addAndMakeVisible(resonanceLabel);
 
-    //FilterADSR
-    //Ammount
-    filterEnvAmountLabel.setText(
-        "Filter Env Amount",
-        juce::dontSendNotification
-    );
+    // Filter ADSR Amount
+    filterEnvAmountLabel.setText("Filter Env Amount", juce::dontSendNotification);
+    filterEnvAmountLabel.setJustificationType(juce::Justification::centred);
 
-    filterEnvAmountLabel.setJustificationType(
-        juce::Justification::centred
-    );
-
-    filterEnvAmountSlider.setSliderStyle(
-        juce::Slider::RotaryHorizontalVerticalDrag
-    );
-
-    filterEnvAmountSlider.setTextBoxStyle(
-        juce::Slider::TextBoxBelow,
-        false,
-        70,
-        20
-    );
-
-    filterEnvAmountSlider.setRange(
-        0.0,
-        10000.0,
-        1.0
-    );
-
+    filterEnvAmountSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
+    filterEnvAmountSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 70, 20);
+    filterEnvAmountSlider.setRange(0.0, 10000.0, 1.0);
     filterEnvAmountSlider.setValue(3000.0);
 
     addAndMakeVisible(filterEnvAmountSlider);
     addAndMakeVisible(filterEnvAmountLabel);
 
     // Filter Attack
-    filterAttackLabel.setText(
-        "Filter Attack",
-        juce::dontSendNotification
-    );
-
-    filterAttackLabel.setJustificationType(
-        juce::Justification::centred
-    );
-
-    filterAttackSlider.setSliderStyle(
-        juce::Slider::LinearVertical
-    );
-
-    filterAttackSlider.setTextBoxStyle(
-        juce::Slider::TextBoxBelow,
-        false,
-        60,
-        20
-    );
-
-    filterAttackSlider.setRange(
-        0.001,
-        5.0,
-        0.001
-    );
-
+    filterAttackSlider.setSliderStyle(juce::Slider::LinearVertical);
+    filterAttackSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
+    filterAttackSlider.setRange(0.001, 5.0, 0.001);
     filterAttackSlider.setValue(0.01);
 
-
     // Filter Decay
-    filterDecayLabel.setText(
-        "Filter Decay",
-        juce::dontSendNotification
-    );
-
-    filterDecayLabel.setJustificationType(
-        juce::Justification::centred
-    );
-
-    filterDecaySlider.setSliderStyle(
-        juce::Slider::LinearVertical
-    );
-
-    filterDecaySlider.setTextBoxStyle(
-        juce::Slider::TextBoxBelow,
-        false,
-        60,
-        20
-    );
-
-    filterDecaySlider.setRange(
-        0.001,
-        5.0,
-        0.001
-    );
-
+    filterDecaySlider.setSliderStyle(juce::Slider::LinearVertical);
+    filterDecaySlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
+    filterDecaySlider.setRange(0.001, 5.0, 0.001);
     filterDecaySlider.setValue(0.2);
 
-
     // Filter Sustain
-    filterSustainLabel.setText(
-        "Filter Sustain",
-        juce::dontSendNotification
-    );
-
-    filterSustainLabel.setJustificationType(
-        juce::Justification::centred
-    );
-
-    filterSustainSlider.setSliderStyle(
-        juce::Slider::LinearVertical
-    );
-
-    filterSustainSlider.setTextBoxStyle(
-        juce::Slider::TextBoxBelow,
-        false,
-        60,
-        20
-    );
-
-    filterSustainSlider.setRange(
-        0.0,
-        1.0,
-        0.01
-    );
-
+    filterSustainSlider.setSliderStyle(juce::Slider::LinearVertical);
+    filterSustainSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
+    filterSustainSlider.setRange(0.0, 1.0, 0.01);
     filterSustainSlider.setValue(0.5);
 
-
     // Filter Release
-    filterReleaseLabel.setText(
-        "Filter Release",
-        juce::dontSendNotification
-    );
-
-    filterReleaseLabel.setJustificationType(
-        juce::Justification::centred
-    );
-
-    filterReleaseSlider.setSliderStyle(
-        juce::Slider::LinearVertical
-    );
-
-    filterReleaseSlider.setTextBoxStyle(
-        juce::Slider::TextBoxBelow,
-        false,
-        60,
-        20
-    );
-
-    filterReleaseSlider.setRange(
-        0.001,
-        5.0,
-        0.001
-    );
-
+    filterReleaseSlider.setSliderStyle(juce::Slider::LinearVertical);
+    filterReleaseSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
+    filterReleaseSlider.setRange(0.001, 5.0, 0.001);
     filterReleaseSlider.setValue(0.2);
 
     // Filter Attack Curve
-    filterAttackCurveLabel.setText(
-        "Attack Curve",
-        juce::dontSendNotification
-    );
-
-    filterAttackCurveLabel.setJustificationType(
-        juce::Justification::centred
-    );
-
-    filterAttackCurveSlider.setSliderStyle(
-        juce::Slider::LinearVertical
-    );
-
-    filterAttackCurveSlider.setTextBoxStyle(
-        juce::Slider::TextBoxBelow,
-        false,
-        60,
-        20
-    );
-
-    filterAttackCurveSlider.setRange(
-        -1.0,
-        1.0,
-        0.01
-    );
-
+    filterAttackCurveSlider.setSliderStyle(juce::Slider::LinearVertical);
+    filterAttackCurveSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
+    filterAttackCurveSlider.setRange(-1.0, 1.0, 0.01);
     filterAttackCurveSlider.setValue(0.0);
 
-
     // Filter Decay Curve
-    filterDecayCurveLabel.setText(
-        "Decay Curve",
-        juce::dontSendNotification
-    );
-
-    filterDecayCurveLabel.setJustificationType(
-        juce::Justification::centred
-    );
-
-    filterDecayCurveSlider.setSliderStyle(
-        juce::Slider::LinearVertical
-    );
-
-    filterDecayCurveSlider.setTextBoxStyle(
-        juce::Slider::TextBoxBelow,
-        false,
-        60,
-        20
-    );
-
-    filterDecayCurveSlider.setRange(
-        -1.0,
-        1.0,
-        0.01
-    );
-
+    filterDecayCurveSlider.setSliderStyle(juce::Slider::LinearVertical);
+    filterDecayCurveSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
+    filterDecayCurveSlider.setRange(-1.0, 1.0, 0.01);
     filterDecayCurveSlider.setValue(0.0);
 
 
     // Filter Release Curve
-    filterReleaseCurveLabel.setText(
-        "Release Curve",
-        juce::dontSendNotification
-    );
-
-    filterReleaseCurveLabel.setJustificationType(
-        juce::Justification::centred
-    );
-
-    filterReleaseCurveSlider.setSliderStyle(
-        juce::Slider::LinearVertical
-    );
-
-    filterReleaseCurveSlider.setTextBoxStyle(
-        juce::Slider::TextBoxBelow,
-        false,
-        60,
-        20
-    );
-
-    filterReleaseCurveSlider.setRange(
-        -1.0,
-        1.0,
-        0.01
-    );
-
+    filterReleaseCurveSlider.setSliderStyle(juce::Slider::LinearVertical);
+    filterReleaseCurveSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
+    filterReleaseCurveSlider.setRange(-1.0, 1.0, 0.01);
     filterReleaseCurveSlider.setValue(0.0);
 
 
     addAndMakeVisible(filterAttackCurveSlider);
     addAndMakeVisible(filterDecayCurveSlider);
     addAndMakeVisible(filterReleaseCurveSlider);
-    addAndMakeVisible(filterAttackCurveLabel);
-    addAndMakeVisible(filterDecayCurveLabel);
-    addAndMakeVisible(filterReleaseCurveLabel);
 
     addAndMakeVisible(filterAttackSlider);
     addAndMakeVisible(filterDecaySlider);
     addAndMakeVisible(filterSustainSlider);
     addAndMakeVisible(filterReleaseSlider);
-    addAndMakeVisible(filterAttackLabel);
-    addAndMakeVisible(filterDecayLabel);
-    addAndMakeVisible(filterSustainLabel);
-    addAndMakeVisible(filterReleaseLabel);
+
 
     filterAttackSlider.onValueChange = [this]
         {
-            float value =
-                (float)filterAttackSlider.getValue();
+            float value = (float)filterAttackSlider.getValue();
 
             for (auto& voice : voices)
                 voice.filterEnvelope.setAttack(value);
@@ -499,8 +287,7 @@ MainComponent::MainComponent()
 
     filterDecaySlider.onValueChange = [this]
         {
-            float value =
-                (float)filterDecaySlider.getValue();
+            float value = (float)filterDecaySlider.getValue();
 
             for (auto& voice : voices)
                 voice.filterEnvelope.setDecay(value);
@@ -509,8 +296,7 @@ MainComponent::MainComponent()
 
     filterSustainSlider.onValueChange = [this]
         {
-            float value =
-                (float)filterSustainSlider.getValue();
+            float value = (float)filterSustainSlider.getValue();
 
             for (auto& voice : voices)
                 voice.filterEnvelope.setSustain(value);
@@ -519,8 +305,7 @@ MainComponent::MainComponent()
 
     filterReleaseSlider.onValueChange = [this]
         {
-            float value =
-                (float)filterReleaseSlider.getValue();
+            float value = (float)filterReleaseSlider.getValue();
 
             for (auto& voice : voices)
                 voice.filterEnvelope.setRelease(value);
@@ -528,16 +313,14 @@ MainComponent::MainComponent()
 
     filterEnvAmountSlider.onValueChange = [this]
         {
-            float value =
-                (float)filterEnvAmountSlider.getValue();
+            float value = (float)filterEnvAmountSlider.getValue();
 
             filterEnvAmount = value;
         };
 
     filterAttackCurveSlider.onValueChange = [this]
         {
-            float value =
-                (float)filterAttackCurveSlider.getValue();
+            float value = (float)filterAttackCurveSlider.getValue();
 
             for (auto& voice : voices)
                 voice.filterEnvelope.setAttackCurve(value);
@@ -546,8 +329,7 @@ MainComponent::MainComponent()
 
     filterDecayCurveSlider.onValueChange = [this]
         {
-            float value =
-                (float)filterDecayCurveSlider.getValue();
+            float value = (float)filterDecayCurveSlider.getValue();
 
             for (auto& voice : voices)
                 voice.filterEnvelope.setDecayCurve(value);
@@ -556,8 +338,7 @@ MainComponent::MainComponent()
 
     filterReleaseCurveSlider.onValueChange = [this]
         {
-            float value =
-                (float)filterReleaseCurveSlider.getValue();
+            float value = (float)filterReleaseCurveSlider.getValue();
 
             for (auto& voice : voices)
                 voice.filterEnvelope.setReleaseCurve(value);
@@ -606,6 +387,113 @@ MainComponent::MainComponent()
             }
         };
     addAndMakeVisible(waveformBox);
+
+    // Octave box
+    octaveBox.addItem("+4", 9);
+    octaveBox.addItem("+3", 8);
+    octaveBox.addItem("+2", 7);
+    octaveBox.addItem("+1", 6);
+    octaveBox.addItem("0", 5);
+    octaveBox.addItem("-1", 4);
+    octaveBox.addItem("-2", 3);
+    octaveBox.addItem("-3", 2);
+    octaveBox.addItem("-4", 1);
+
+    octaveBox.setSelectedId(5);
+
+    octaveBox.onChange = [this]
+        {
+            int selectedOctave = octaveBox.getSelectedId() - 5;;
+
+            for (auto& voice : voices)
+            {
+                voice.oscillator.setOctave(selectedOctave);
+            }
+        };
+
+    addAndMakeVisible(octaveBox);
+
+    //envelope selector box
+    envelopeSelectorBox.addItem("Amplitude", 1);
+    envelopeSelectorBox.addItem("Filter", 2);
+
+    envelopeSelectorBox.onChange = [this]
+        {
+            int selectedEnvelope = envelopeSelectorBox.getSelectedId();
+
+            switch (selectedEnvelope)
+            {
+            case 1:
+                //Filter OFF
+                filterAttackSlider.setVisible(false);
+                filterDecaySlider.setVisible(false);
+                filterSustainSlider.setVisible(false);
+                filterReleaseSlider.setVisible(false);
+
+                filterAttackCurveSlider.setVisible(false);
+                filterDecayCurveSlider.setVisible(false);
+                filterReleaseCurveSlider.setVisible(false);
+
+                //Amplitude ON
+                amplitudeAttackSlider.setVisible(true);
+                amplitudeDecaySlider.setVisible(true);
+                amplitudeSustainSlider.setVisible(true);
+                amplitudeReleaseSlider.setVisible(true);
+
+                amplitudeAttackCurveSlider.setVisible(true);
+                amplitudeDecayCurveSlider.setVisible(true);
+                amplitudeReleaseCurveSlider.setVisible(true);
+
+                amplitudeAttackSlider.toFront(false);
+                amplitudeDecaySlider.toFront(false);
+                amplitudeSustainSlider.toFront(false);
+                amplitudeReleaseSlider.toFront(false);
+
+                amplitudeAttackCurveSlider.toFront(false);
+                amplitudeDecayCurveSlider.toFront(false);
+                amplitudeReleaseCurveSlider.toFront(false);
+                break;
+
+            case 2:
+                //Amplitude OFF
+                amplitudeAttackSlider.setVisible(false);
+                amplitudeDecaySlider.setVisible(false);
+                amplitudeSustainSlider.setVisible(false);
+                amplitudeReleaseSlider.setVisible(false);
+
+                amplitudeAttackCurveSlider.setVisible(false);
+                amplitudeDecayCurveSlider.setVisible(false);
+                amplitudeReleaseCurveSlider.setVisible(false);
+
+                //filter ON
+                filterAttackSlider.setVisible(true);
+                filterDecaySlider.setVisible(true);
+                filterSustainSlider.setVisible(true);
+                filterReleaseSlider.setVisible(true);
+ 
+                filterAttackCurveSlider.setVisible(true);
+                filterDecayCurveSlider.setVisible(true);
+                filterReleaseCurveSlider.setVisible(true);
+
+                filterAttackSlider.toFront(false);
+                filterDecaySlider.toFront(false);
+                filterSustainSlider.toFront(false);
+                filterReleaseSlider.toFront(false);
+
+                filterAttackCurveSlider.toFront(false);
+                filterDecayCurveSlider.toFront(false);
+                filterReleaseCurveSlider.toFront(false);
+
+                break;
+
+            default:
+                
+                break;
+            }
+            repaint();
+        };
+    envelopeSelectorBox.setSelectedId(1);
+    addAndMakeVisible(envelopeSelectorBox);
 
     // poly/mono button
     polyModeButton.setButtonText("Poly / Mono");
@@ -792,17 +680,31 @@ void MainComponent::resized()
 
     waveformBox.setBounds(20, 150, 100, 30);
 
+    octaveBox.setBounds(60, 150, 100, 30);
+
+    envelopeSelectorBox.setBounds(100, 300, 100, 30);
+
     polyModeButton.setBounds(20, 200, 100, 30);
 
-    attackLabel.setBounds(95, 350, 50, 20);
-    decayLabel.setBounds(145, 350, 50, 20);
-    sustainLabel.setBounds(195, 350, 50, 20);
-    releaseLabel.setBounds(245, 350, 50, 20);
+    // amp adsr
+    amplitudeAttackLabel.setBounds(100, 350, 50, 20);
+    amplitudeDecayLabel.setBounds(150, 350, 50, 20);
+    amplitudeSustainLabel.setBounds(200, 350, 50, 20);
+    amplitudeReleaseLabel.setBounds(250, 350, 50, 20);
 
-    attackSlider.setBounds(100, 370, 40, 120);
-    decaySlider.setBounds(150, 370, 40, 120);
-    sustainSlider.setBounds(200, 370, 40, 120);
-    releaseSlider.setBounds(250, 370, 40, 120);
+    amplitudeAttackSlider.setBounds(100, 370, 40, 120);
+    amplitudeDecaySlider.setBounds(150, 370, 40, 120);
+    amplitudeSustainSlider.setBounds(200, 370, 40, 120);
+    amplitudeReleaseSlider.setBounds(250, 370, 40, 120);
+
+    amplitudeAttackCurveLabel.setBounds(100, 530, 80, 20);
+    amplitudeAttackCurveSlider.setBounds(100, 550, 80, 120);
+
+    amplitudeDecayCurveLabel.setBounds(150, 530, 80, 20);
+    amplitudeDecayCurveSlider.setBounds(150, 550, 80, 120);
+
+    amplitudeReleaseCurveLabel.setBounds(250, 530, 80, 20);
+    amplitudeReleaseCurveSlider.setBounds(250, 550, 80, 120);
 
     cutoffLabel.setBounds(320, 350, 80, 20);
     cutoffSlider.setBounds(320, 350, 80, 200);
@@ -813,23 +715,24 @@ void MainComponent::resized()
     filterEnvAmountLabel.setBounds(360, 200, 80, 20);
     filterEnvAmountSlider.setBounds(360, 200, 80, 200);
 
-    filterAttackLabel.setBounds(500, 350, 50, 20);
-    filterDecayLabel.setBounds(550, 350, 50, 20 );
-    filterSustainLabel.setBounds(600, 350, 50, 20);
-    filterReleaseLabel.setBounds(650, 350, 50, 20);
+    filterAttackLabel.setBounds(100, 350, 50, 20);
+    filterDecayLabel.setBounds(150, 350, 50, 20 );
+    filterSustainLabel.setBounds(200, 350, 50, 20);
+    filterReleaseLabel.setBounds(250, 350, 50, 20);
 
-    filterAttackSlider.setBounds(500, 370, 40, 120);
-    filterDecaySlider.setBounds(550, 370, 40, 120);
-    filterSustainSlider.setBounds(600, 370, 40, 120);
-    filterReleaseSlider.setBounds(650, 370, 40, 120);
+    filterAttackSlider.setBounds(100, 370, 40, 120);
+    filterDecaySlider.setBounds(150, 370, 40, 120);
+    filterSustainSlider.setBounds(200, 370, 40, 120);
+    filterReleaseSlider.setBounds(250, 370, 40, 120);
 
-    filterAttackCurveLabel.setBounds(400, 530, 80, 20);
-    filterAttackCurveSlider.setBounds(400, 550, 80, 120);
-    filterDecayCurveLabel.setBounds(485, 530, 80, 20);
+    filterAttackCurveLabel.setBounds(100, 530, 80, 20);
+    filterAttackCurveSlider.setBounds(100, 550, 80, 120);
+    
+    filterDecayCurveLabel.setBounds(150, 530, 80, 20);
+    filterDecayCurveSlider.setBounds(150, 550, 80, 120);
 
-    filterDecayCurveSlider.setBounds(485, 550, 80, 120);
-    filterReleaseCurveLabel.setBounds(570, 530, 80, 20);
-    filterReleaseCurveSlider.setBounds(570, 550, 80, 120);
+    filterReleaseCurveLabel.setBounds(250, 530, 80, 20);
+    filterReleaseCurveSlider.setBounds(250, 550, 80, 120);
 
     unisonVoicesBox.setBounds(500, 150, 100, 30);
 
@@ -865,47 +768,29 @@ void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRat
     for (auto& voice : voices)
     {
         
+        voice.amplitudeEnvelope.prepare(deviceSampleRate);
         voice.filterEnvelope.prepare(deviceSampleRate);
-
         voice.filter.prepare(deviceSampleRate);
-
         voice.oscillator.prepare(deviceSampleRate);
 
-        voice.filter.setCutoff(
-            (float)cutoffSlider.getValue()
-        );
+        voice.amplitudeEnvelope.setAttack((float)amplitudeAttackSlider.getValue());
+        voice.amplitudeEnvelope.setDecay((float)amplitudeDecaySlider.getValue());
+        voice.amplitudeEnvelope.setSustain((float)amplitudeSustainSlider.getValue());
+        voice.amplitudeEnvelope.setRelease((float)amplitudeReleaseSlider.getValue());
+        voice.amplitudeEnvelope.setAttackCurve((float)amplitudeAttackCurveSlider.getValue());
+        voice.amplitudeEnvelope.setDecayCurve((float)amplitudeDecayCurveSlider.getValue());
+        voice.amplitudeEnvelope.setReleaseCurve((float)amplitudeReleaseCurveSlider.getValue());
 
-        voice.filter.setResonance(
-            (float)resonanceSlider.getValue()
-        );
+        voice.filter.setCutoff((float)cutoffSlider.getValue());
+        voice.filter.setResonance((float)resonanceSlider.getValue());
 
-        voice.filterEnvelope.setAttack(
-            (float)filterAttackSlider.getValue()
-        );
-
-        voice.filterEnvelope.setDecay(
-            (float)filterDecaySlider.getValue()
-        );
-
-        voice.filterEnvelope.setSustain(
-            (float)filterSustainSlider.getValue()
-        );
-
-        voice.filterEnvelope.setRelease(
-            (float)filterReleaseSlider.getValue()
-        );
-
-        voice.filterEnvelope.setAttackCurve(
-            (float)filterAttackCurveSlider.getValue()
-        );
-
-        voice.filterEnvelope.setDecayCurve(
-            (float)filterDecayCurveSlider.getValue()
-        );
-
-        voice.filterEnvelope.setReleaseCurve(
-            (float)filterReleaseCurveSlider.getValue()
-        );
+        voice.filterEnvelope.setAttack((float)filterAttackSlider.getValue());
+        voice.filterEnvelope.setDecay((float)filterDecaySlider.getValue());
+        voice.filterEnvelope.setSustain((float)filterSustainSlider.getValue());
+        voice.filterEnvelope.setRelease((float)filterReleaseSlider.getValue());
+        voice.filterEnvelope.setAttackCurve((float)filterAttackCurveSlider.getValue());
+        voice.filterEnvelope.setDecayCurve((float)filterDecayCurveSlider.getValue());
+        voice.filterEnvelope.setReleaseCurve((float)filterReleaseCurveSlider.getValue());
 
         voice.oscillator.setUnisonVoices(unisonVoices);
         voice.oscillator.setDetune(unisonDetune);
@@ -952,20 +837,20 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
             voice.oscillator.getNextSample(voiceLeft, voiceRight);
 
             //ADSR
-            float envelope = voice.envelope.getNextSample();
+            float amplitudeEnvelopeValue = voice.amplitudeEnvelope.getNextSample();
 
-            voiceLeft *= envelope;
-            voiceRight *= envelope;
+            voiceLeft *= amplitudeEnvelopeValue;
+            voiceRight *= amplitudeEnvelopeValue;
 
             //FILTER
-            float envelopeValue = voice.filterEnvelope.getNextSample();
+            float filterEnvelopeValue = voice.filterEnvelope.getNextSample();
 
 
             float baseCutoff = (float)cutoffSlider.getValue();
 
             float envelopeAmount = (float)filterEnvAmountSlider.getValue();
 
-            float modulatedCutoff = baseCutoff + envelopeValue * envelopeAmount;
+            float modulatedCutoff = baseCutoff + filterEnvelopeValue * envelopeAmount;
 
             voice.filter.setCutoff(modulatedCutoff);
 
@@ -978,7 +863,7 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
             rightValue += voiceRight;
 
             //deactivate voice after release
-            if (!voice.envelope.isActive())
+            if (!voice.amplitudeEnvelope.isActive())
             {
                 voice.active = false;
                 voice.noteHeld = false;
@@ -1155,8 +1040,8 @@ void MainComponent::startVoice(int midiNote)
 
         voice.oscillator.reset();
 
-        voice.envelope.setParameters(adsrParameters);
-        voice.envelope.noteOn();
+        //voice.filterEnvelope.setParameters(adsrParameters);
+        voice.amplitudeEnvelope.noteOn();
 
         voice.filterEnvelope.noteOn();
 
@@ -1211,8 +1096,8 @@ void MainComponent::startVoice(int midiNote)
 
     voiceToUse->oscillator.reset();
 
-    voiceToUse->envelope.setParameters(adsrParameters);
-    voiceToUse->envelope.noteOn();
+    //voiceToUse->envelope.setParameters(adsrParameters);
+    voiceToUse->amplitudeEnvelope.noteOn();
 
     voiceToUse->filterEnvelope.noteOn();
 
@@ -1229,7 +1114,7 @@ void MainComponent::stopVoice(int midiNote)
             voice.midiNote == midiNote)
         {
             voice.noteHeld = false;
-            voice.envelope.noteOff();
+            voice.amplitudeEnvelope.noteOff();
             voice.filterEnvelope.noteOff();
 
             return;

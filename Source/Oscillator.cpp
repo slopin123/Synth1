@@ -58,16 +58,23 @@ void Oscillator::prepare(double newSampleRate)
     unisonVoices[0].frequency = frequency;
     unisonVoices[0].phase = 0.0;
 }
-void Oscillator::setFrequency(float newFrequency)
-{
-    frequency = newFrequency;
-
-    updateFrequencies();
-}
 
 void Oscillator::setWaveform(int newWaveform)
 {
     waveform = newWaveform;
+}
+
+void Oscillator::setOctave(int newOctave)
+{
+    octave = std::pow(2.0f, newOctave); // octave control multiplier [-4, 4], octave = 1 by default.
+}
+
+void Oscillator::setFrequency(float newFrequency)
+{
+
+    frequency = newFrequency * octave;
+
+    updateFrequencies();
 }
 
 void Oscillator::reset()
