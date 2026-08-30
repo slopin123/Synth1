@@ -13,14 +13,18 @@ public:
     void reset();
 
 private:
+    void updateCoefficient();
+
     float sampleRate = 44100.0f;
 
     float cutoff = 1000.0f;
     float resonance = 0.0f;
-
-    float low[2] = { 0.0f, 0.0f };
-    float band[2] = { 0.0f, 0.0f };
-    float high = 0.0f;
-
     float damping = 1.0f;
+
+    float coefficient = 0.0f;
+
+    float low[2] = {};
+    float band[2] = {};
+
+    
 };

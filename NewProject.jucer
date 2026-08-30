@@ -4,12 +4,10 @@
               addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1">
   <MAINGROUP id="iil8o8" name="FirstSynth_SL">
     <GROUP id="{3B090994-AFA6-EFF7-800F-4659C7760334}" name="Source">
+      <FILE id="ssfSfg" name="Envelope.cpp" compile="1" resource="0" file="Source/Envelope.cpp"/>
+      <FILE id="Ejadkt" name="Envelope.h" compile="0" resource="0" file="Source/Envelope.h"/>
       <FILE id="ONYpgJ" name="Oscillator.cpp" compile="1" resource="0" file="Source/Oscillator.cpp"/>
       <FILE id="K4vT5J" name="Oscillator.h" compile="0" resource="0" file="Source/Oscillator.h"/>
-      <FILE id="PApT4h" name="FilterEnvelope.cpp" compile="1" resource="0"
-            file="Source/FilterEnvelope.cpp"/>
-      <FILE id="USC6Bi" name="FilterEnvelope.h" compile="0" resource="0"
-            file="Source/FilterEnvelope.h"/>
       <FILE id="ZSsjAV" name="SimpleLP.cpp" compile="1" resource="0" file="Source/SimpleLP.cpp"/>
       <FILE id="ml7YX9" name="SimpleLP.h" compile="0" resource="0" file="Source/SimpleLP.h"/>
       <FILE id="nMMh91" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>

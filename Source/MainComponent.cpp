@@ -44,7 +44,7 @@ MainComponent::MainComponent()
     // amplitude Attack Curve
     amplitudeAttackCurveLabel.setText("Attack Curve", juce::dontSendNotification);
     amplitudeAttackCurveLabel.setJustificationType(juce::Justification::centred);
-    amplitudeAttackCurveSlider.setSliderStyle(juce::Slider::LinearVertical);
+    amplitudeAttackCurveSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
     amplitudeAttackCurveSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
     amplitudeAttackCurveSlider.setRange(-1.0, 1.0, 0.01);
     amplitudeAttackCurveSlider.setValue(0.0);
@@ -52,7 +52,7 @@ MainComponent::MainComponent()
     // amplitude Decay Curve
     amplitudeDecayCurveLabel.setText("Decay Curve", juce::dontSendNotification);
     amplitudeDecayCurveLabel.setJustificationType(juce::Justification::centred);
-    amplitudeDecayCurveSlider.setSliderStyle(juce::Slider::LinearVertical);
+    amplitudeDecayCurveSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
     amplitudeDecayCurveSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
     amplitudeDecayCurveSlider.setRange(-1.0, 1.0, 0.01);
     amplitudeDecayCurveSlider.setValue(0.0);
@@ -61,7 +61,7 @@ MainComponent::MainComponent()
     // amplitude Release Curve
     amplitudeReleaseCurveLabel.setText("Release Curve", juce::dontSendNotification);
     amplitudeReleaseCurveLabel.setJustificationType(juce::Justification::centred);
-    amplitudeReleaseCurveSlider.setSliderStyle(juce::Slider::LinearVertical);
+    amplitudeReleaseCurveSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
     amplitudeReleaseCurveSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
     amplitudeReleaseCurveSlider.setRange(-1.0, 1.0, 0.01);
     amplitudeReleaseCurveSlider.setValue(0.0);
@@ -247,20 +247,20 @@ MainComponent::MainComponent()
     filterReleaseSlider.setValue(0.2);
 
     // Filter Attack Curve
-    filterAttackCurveSlider.setSliderStyle(juce::Slider::LinearVertical);
+    filterAttackCurveSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
     filterAttackCurveSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
     filterAttackCurveSlider.setRange(-1.0, 1.0, 0.01);
     filterAttackCurveSlider.setValue(0.0);
 
     // Filter Decay Curve
-    filterDecayCurveSlider.setSliderStyle(juce::Slider::LinearVertical);
+    filterDecayCurveSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
     filterDecayCurveSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
     filterDecayCurveSlider.setRange(-1.0, 1.0, 0.01);
     filterDecayCurveSlider.setValue(0.0);
 
-
+   
     // Filter Release Curve
-    filterReleaseCurveSlider.setSliderStyle(juce::Slider::LinearVertical);
+    filterReleaseCurveSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
     filterReleaseCurveSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
     filterReleaseCurveSlider.setRange(-1.0, 1.0, 0.01);
     filterReleaseCurveSlider.setValue(0.0);
@@ -697,14 +697,9 @@ void MainComponent::resized()
     amplitudeSustainSlider.setBounds(200, 370, 40, 120);
     amplitudeReleaseSlider.setBounds(250, 370, 40, 120);
 
-    amplitudeAttackCurveLabel.setBounds(100, 530, 80, 20);
-    amplitudeAttackCurveSlider.setBounds(100, 550, 80, 120);
-
-    amplitudeDecayCurveLabel.setBounds(150, 530, 80, 20);
-    amplitudeDecayCurveSlider.setBounds(150, 550, 80, 120);
-
-    amplitudeReleaseCurveLabel.setBounds(250, 530, 80, 20);
-    amplitudeReleaseCurveSlider.setBounds(250, 550, 80, 120);
+    amplitudeAttackCurveSlider.setBounds(100, 500, 40, 60);
+    amplitudeDecayCurveSlider.setBounds(150, 500, 40, 60);
+    amplitudeReleaseCurveSlider.setBounds(250, 500, 40, 60);
 
     cutoffLabel.setBounds(320, 350, 80, 20);
     cutoffSlider.setBounds(320, 350, 80, 200);
@@ -725,14 +720,9 @@ void MainComponent::resized()
     filterSustainSlider.setBounds(200, 370, 40, 120);
     filterReleaseSlider.setBounds(250, 370, 40, 120);
 
-    filterAttackCurveLabel.setBounds(100, 530, 80, 20);
-    filterAttackCurveSlider.setBounds(100, 550, 80, 120);
-    
-    filterDecayCurveLabel.setBounds(150, 530, 80, 20);
-    filterDecayCurveSlider.setBounds(150, 550, 80, 120);
-
-    filterReleaseCurveLabel.setBounds(250, 530, 80, 20);
-    filterReleaseCurveSlider.setBounds(250, 550, 80, 120);
+    filterAttackCurveSlider.setBounds(100, 500, 40, 60);
+    filterDecayCurveSlider.setBounds(150, 500, 40, 60);
+    filterReleaseCurveSlider.setBounds(250, 500, 40, 60);
 
     unisonVoicesBox.setBounds(500, 150, 100, 30);
 
@@ -844,22 +834,17 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
 
             //FILTER
             float filterEnvelopeValue = voice.filterEnvelope.getNextSample();
-
-
             float baseCutoff = (float)cutoffSlider.getValue();
-
             float envelopeAmount = (float)filterEnvAmountSlider.getValue();
 
             float modulatedCutoff = baseCutoff + filterEnvelopeValue * envelopeAmount;
-
             voice.filter.setCutoff(modulatedCutoff);
 
             voiceLeft = voice.filter.processSample(voiceLeft,0);
-
             voiceRight = voice.filter.processSample(voiceRight,1);
 
             //MIX
-            leftValue += voiceLeft;
+            leftValue += voiceLeft; //
             rightValue += voiceRight;
 
             //deactivate voice after release
