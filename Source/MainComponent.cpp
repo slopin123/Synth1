@@ -8,9 +8,63 @@ MainComponent::MainComponent()
     setSize (800, 600);
     setAudioChannels(0, 2);
 
-    //LFO Editor window
+    // 1. Setup LFO Editor window & bind curve updates directly to DSP
     addAndMakeVisible(lfoEditor);
+    lfoEditor.onTableUpdated = [this](const std::array<float, 512>& table)
+        {
+            lfoMain.updateTable(table);
+        };
+
+    // Generate and push initial curve table to DSP
+    lfoEditor.notifyTableUpdated();
+
+    // 2. LFO Rate Slider -> Configures lfoMain
+    LfoRateSlider.setRange(0.1, 20.0, 0.1);
+    LfoRateSlider.setValue(1.0);
+    LfoRateSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
+    LfoRateSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
+    LfoRateSlider.setTextValueSuffix(" Hz");
+    LfoRateSlider.onValueChange = [this] {
+        lfoMain.setRateHz(static_cast<float>(LfoRateSlider.getValue()));
+        };
+    addAndMakeVisible(LfoRateSlider);
+
+    // 3. Loop Mode ComboBox -> Configures lfoMain
+    loopModeBox.addItem("Loop", 1);
+    loopModeBox.addItem("One-Shot", 2);
+    loopModeBox.addItem("Ping-Pong", 3);
+    loopModeBox.setSelectedId(1);
+    loopModeBox.onChange = [this] {
+        int id = loopModeBox.getSelectedId();
+        if (id == 1)      lfoMain.setLoopMode(LfoMain::LoopMode::Loop);
+        else if (id == 2) lfoMain.setLoopMode(LfoMain::LoopMode::OneShot);
+        else if (id == 3) lfoMain.setLoopMode(LfoMain::LoopMode::PingPong);
+        };
+    addAndMakeVisible(loopModeBox);
+
+    // Retrigger Button
+    retrigButton.setToggleState(true, juce::dontSendNotification);
+    lfoMain.setRetrig(true);
+    retrigButton.onClick = [this] {
+        lfoMain.setRetrig(retrigButton.getToggleState());
+        };
+    addAndMakeVisible(retrigButton);
+
+    vBlankAttachment = std::make_unique<juce::VBlankAttachment>(this, [this]
+        {
+            // Use isAnyVoiceActive() to drive UI updates efficiently
+            if (isAnyVoiceActive())
+            {
+                lfoEditor.setAudioPhase(lfoMain.getAudioPhase(), true);
+            }
+        });
+
+    // Set bounds last
     setSize(800, 600);
+
+    // Filter LFO testing
+    lfoFilterEnableButton.setToggleState(false, juce::dontSendNotification);
+    addAndMakeVisible(lfoFilterEnableButton);
 
     //ADSR
     // amplitude Attack
@@ -89,7 +143,7 @@ MainComponent::MainComponent()
 
     amplitudeAttackSlider.onValueChange = [this]
         {
-            float value = (float)amplitudeAttackSlider.getValue();
+            float value = static_cast<float>(amplitudeAttackSlider.getValue());
 
             for (auto& voice : voices)
                 voice.amplitudeEnvelope.setAttack(value);
@@ -98,7 +152,7 @@ MainComponent::MainComponent()
 
     amplitudeDecaySlider.onValueChange = [this]
         {
-            float value = (float)amplitudeDecaySlider.getValue();
+            float value = static_cast<float>(amplitudeDecaySlider.getValue());
 
             for (auto& voice : voices)
                 voice.amplitudeEnvelope.setDecay(value);
@@ -107,7 +161,7 @@ MainComponent::MainComponent()
 
     amplitudeSustainSlider.onValueChange = [this]
         {
-            float value = (float)amplitudeSustainSlider.getValue();
+            float value = static_cast<float>(amplitudeSustainSlider.getValue());
 
             for (auto& voice : voices)
                 voice.amplitudeEnvelope.setSustain(value);
@@ -116,7 +170,7 @@ MainComponent::MainComponent()
 
     amplitudeReleaseSlider.onValueChange = [this]
         {
-            float value = (float)amplitudeReleaseSlider.getValue();
+            float value = static_cast<float>(amplitudeReleaseSlider.getValue());
 
             for (auto& voice : voices)
                 voice.amplitudeEnvelope.setRelease(value);
@@ -125,7 +179,7 @@ MainComponent::MainComponent()
 
     amplitudeAttackCurveSlider.onValueChange = [this]
         {
-            float value = (float)amplitudeAttackCurveSlider.getValue();
+            float value = static_cast<float>(amplitudeAttackCurveSlider.getValue());
 
             for (auto& voice : voices)
                 voice.amplitudeEnvelope.setAttackCurve(value);
@@ -134,7 +188,7 @@ MainComponent::MainComponent()
 
     amplitudeDecayCurveSlider.onValueChange = [this]
         {
-            float value = (float)amplitudeDecayCurveSlider.getValue();
+            float value = static_cast<float>(amplitudeDecayCurveSlider.getValue());
 
             for (auto& voice : voices)
                 voice.amplitudeEnvelope.setDecayCurve(value);
@@ -143,7 +197,7 @@ MainComponent::MainComponent()
 
     amplitudeReleaseCurveSlider.onValueChange = [this]
         {
-            float value = (float)amplitudeReleaseCurveSlider.getValue();
+            float value = static_cast<float>(amplitudeReleaseCurveSlider.getValue());
 
             for (auto& voice : voices)
                 voice.amplitudeEnvelope.setReleaseCurve(value);
@@ -166,7 +220,7 @@ MainComponent::MainComponent()
 
     cutoffSlider.onValueChange = [this]
         {
-            float filterCutoff = (float)cutoffSlider.getValue();
+            float filterCutoff = static_cast<float>(cutoffSlider.getValue());
 
             for (auto& voice : voices)
             {
@@ -203,7 +257,7 @@ MainComponent::MainComponent()
 
     resonanceSlider.onValueChange = [this]
         {
-            float resonance = (float)resonanceSlider.getValue();
+            float resonance = static_cast<float>(resonanceSlider.getValue());
 
             for (auto& voice : voices)
             {
@@ -282,7 +336,7 @@ MainComponent::MainComponent()
 
     filterAttackSlider.onValueChange = [this]
         {
-            float value = (float)filterAttackSlider.getValue();
+            float value = static_cast<float>(filterAttackSlider.getValue());
 
             for (auto& voice : voices)
                 voice.filterEnvelope.setAttack(value);
@@ -291,7 +345,7 @@ MainComponent::MainComponent()
 
     filterDecaySlider.onValueChange = [this]
         {
-            float value = (float)filterDecaySlider.getValue();
+            float value = static_cast<float>(filterDecaySlider.getValue());
 
             for (auto& voice : voices)
                 voice.filterEnvelope.setDecay(value);
@@ -300,7 +354,7 @@ MainComponent::MainComponent()
 
     filterSustainSlider.onValueChange = [this]
         {
-            float value = (float)filterSustainSlider.getValue();
+            float value = static_cast<float>(filterSustainSlider.getValue());
 
             for (auto& voice : voices)
                 voice.filterEnvelope.setSustain(value);
@@ -309,7 +363,7 @@ MainComponent::MainComponent()
 
     filterReleaseSlider.onValueChange = [this]
         {
-            float value = (float)filterReleaseSlider.getValue();
+            float value = static_cast<float>(filterReleaseSlider.getValue());
 
             for (auto& voice : voices)
                 voice.filterEnvelope.setRelease(value);
@@ -317,14 +371,14 @@ MainComponent::MainComponent()
 
     filterEnvAmountSlider.onValueChange = [this]
         {
-            float value = (float)filterEnvAmountSlider.getValue();
+            float value = static_cast<float>(filterEnvAmountSlider.getValue());
 
             filterEnvAmount = value;
         };
 
     filterAttackCurveSlider.onValueChange = [this]
         {
-            float value = (float)filterAttackCurveSlider.getValue();
+            float value = static_cast<float>(filterAttackCurveSlider.getValue());
 
             for (auto& voice : voices)
                 voice.filterEnvelope.setAttackCurve(value);
@@ -333,7 +387,7 @@ MainComponent::MainComponent()
 
     filterDecayCurveSlider.onValueChange = [this]
         {
-            float value = (float)filterDecayCurveSlider.getValue();
+            float value = static_cast<float>(filterDecayCurveSlider.getValue());
 
             for (auto& voice : voices)
                 voice.filterEnvelope.setDecayCurve(value);
@@ -342,7 +396,7 @@ MainComponent::MainComponent()
 
     filterReleaseCurveSlider.onValueChange = [this]
         {
-            float value = (float)filterReleaseCurveSlider.getValue();
+            float value = static_cast<float>(filterReleaseCurveSlider.getValue());
 
             for (auto& voice : voices)
                 voice.filterEnvelope.setReleaseCurve(value);
@@ -356,7 +410,7 @@ MainComponent::MainComponent()
     frequencyLabel.setText("Frequency", juce::dontSendNotification);
     frequencySlider.onValueChange = [this]
         {
-            //frequency = (float)frequencySlider.getValue();
+            //frequency = static_cast<float>(frequencySlider.getValue());
         };
     addAndMakeVisible(frequencySlider);
     addAndMakeVisible(frequencyLabel);
@@ -368,7 +422,7 @@ MainComponent::MainComponent()
     volumeLabel.setText("Volume", juce::dontSendNotification);
     volumeSlider.onValueChange = [this]
         {
-            volume = (float)volumeSlider.getValue();
+            volume = static_cast<float>(volumeSlider.getValue());
         };
     addAndMakeVisible(volumeSlider);
     addAndMakeVisible(volumeLabel);
@@ -517,7 +571,7 @@ MainComponent::MainComponent()
 
     panSlider.onValueChange = [this]
         {
-            pan = (float)panSlider.getValue();
+            pan = static_cast<float>(panSlider.getValue());
         };
 
     addAndMakeVisible(panSlider);
@@ -567,7 +621,7 @@ MainComponent::MainComponent()
     unisonDetuneSlider.onValueChange = [this]
         {
             unisonDetune =
-                (float)unisonDetuneSlider.getValue();
+                static_cast<float>(unisonDetuneSlider.getValue());
 
             for (auto& voice : voices)
             {
@@ -585,7 +639,7 @@ MainComponent::MainComponent()
     unisonMixSlider.onValueChange = [this]
         {
             unisonMix =
-                (float)unisonMixSlider.getValue();
+                static_cast<float>(unisonMixSlider.getValue());
 
             for (auto& voice : voices)
             {
@@ -602,7 +656,7 @@ MainComponent::MainComponent()
 
     phaseRandomSlider.onValueChange = [this]
         {
-            phaseRandom = (float)phaseRandomSlider.getValue();
+            phaseRandom = static_cast<float>(phaseRandomSlider.getValue());
 
             for (auto& voice : voices)
             {
@@ -617,7 +671,7 @@ MainComponent::MainComponent()
 
     stereoSpreadSlider.onValueChange = [this]
         {
-            stereoSpread = (float)stereoSpreadSlider.getValue();
+            stereoSpread = static_cast<float>(stereoSpreadSlider.getValue());
 
             for (auto& voice : voices)
             {
@@ -693,6 +747,12 @@ void MainComponent::resized()
     // LFO
     lfoEditor.setBounds(500, 350, getWidth() / 4, 150);
 
+    LfoRateSlider.setBounds(500, 500, 40, 60);
+    loopModeBox.setBounds(550, 510, 80, 20);
+    retrigButton.setBounds(650, 510, 80, 20);
+
+    lfoFilterEnableButton.setBounds(750, 510, 80, 20);
+
     // amp adsr
     amplitudeAttackLabel.setBounds(100, 350, 50, 20);
     amplitudeDecayLabel.setBounds(150, 350, 50, 20);
@@ -751,6 +811,8 @@ void MainComponent::resized()
 MainComponent::~MainComponent()
 {
     // This shuts down the audio device and clears the audio source.
+    
+    vBlankAttachment.reset();
     shutdownAudio();
 }
 
@@ -762,32 +824,34 @@ void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRat
 
     deviceSampleRate = sampleRate;
 
+    lfoMain.prepare(deviceSampleRate);
+    lfoMain.reset();
+
     for (auto& voice : voices)
     {
-        
         voice.amplitudeEnvelope.prepare(deviceSampleRate);
         voice.filterEnvelope.prepare(deviceSampleRate);
         voice.filter.prepare(deviceSampleRate);
         voice.oscillator.prepare(deviceSampleRate);
 
-        voice.amplitudeEnvelope.setAttack((float)amplitudeAttackSlider.getValue());
-        voice.amplitudeEnvelope.setDecay((float)amplitudeDecaySlider.getValue());
-        voice.amplitudeEnvelope.setSustain((float)amplitudeSustainSlider.getValue());
-        voice.amplitudeEnvelope.setRelease((float)amplitudeReleaseSlider.getValue());
-        voice.amplitudeEnvelope.setAttackCurve((float)amplitudeAttackCurveSlider.getValue());
-        voice.amplitudeEnvelope.setDecayCurve((float)amplitudeDecayCurveSlider.getValue());
-        voice.amplitudeEnvelope.setReleaseCurve((float)amplitudeReleaseCurveSlider.getValue());
+        voice.amplitudeEnvelope.setAttack(static_cast<float>(amplitudeAttackSlider.getValue()));
+        voice.amplitudeEnvelope.setDecay(static_cast<float>(amplitudeDecaySlider.getValue()));
+        voice.amplitudeEnvelope.setSustain(static_cast<float>(amplitudeSustainSlider.getValue()));
+        voice.amplitudeEnvelope.setRelease(static_cast<float>(amplitudeReleaseSlider.getValue()));
+        voice.amplitudeEnvelope.setAttackCurve(static_cast<float>(amplitudeAttackCurveSlider.getValue()));
+        voice.amplitudeEnvelope.setDecayCurve(static_cast<float>(amplitudeDecayCurveSlider.getValue()));
+        voice.amplitudeEnvelope.setReleaseCurve(static_cast<float>(amplitudeReleaseCurveSlider.getValue()));
 
-        voice.filter.setCutoff((float)cutoffSlider.getValue());
-        voice.filter.setResonance((float)resonanceSlider.getValue());
+        voice.filter.setCutoff(static_cast<float>(cutoffSlider.getValue()));
+        voice.filter.setResonance(static_cast<float>(resonanceSlider.getValue()));
 
-        voice.filterEnvelope.setAttack((float)filterAttackSlider.getValue());
-        voice.filterEnvelope.setDecay((float)filterDecaySlider.getValue());
-        voice.filterEnvelope.setSustain((float)filterSustainSlider.getValue());
-        voice.filterEnvelope.setRelease((float)filterReleaseSlider.getValue());
-        voice.filterEnvelope.setAttackCurve((float)filterAttackCurveSlider.getValue());
-        voice.filterEnvelope.setDecayCurve((float)filterDecayCurveSlider.getValue());
-        voice.filterEnvelope.setReleaseCurve((float)filterReleaseCurveSlider.getValue());
+        voice.filterEnvelope.setAttack(static_cast<float>(filterAttackSlider.getValue()));
+        voice.filterEnvelope.setDecay(static_cast<float>(filterDecaySlider.getValue()));
+        voice.filterEnvelope.setSustain(static_cast<float>(filterSustainSlider.getValue()));
+        voice.filterEnvelope.setRelease(static_cast<float>(filterReleaseSlider.getValue()));
+        voice.filterEnvelope.setAttackCurve(static_cast<float>(filterAttackCurveSlider.getValue()));
+        voice.filterEnvelope.setDecayCurve(static_cast<float>(filterDecayCurveSlider.getValue()));
+        voice.filterEnvelope.setReleaseCurve(static_cast<float>(filterReleaseCurveSlider.getValue()));
 
         voice.oscillator.setUnisonVoices(unisonVoices);
         voice.oscillator.setDetune(unisonDetune);
@@ -816,8 +880,19 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
 
     float gain = juce::Decibels::decibelsToGain(volume);
 
+    // Modulation depth in Hz
+    constexpr float lfoModulationDepth = 1500.0f;
+
     for (int sample = 0; sample < numSamples; ++sample)
     {
+        // 1. Get raw LFO sample safely
+        float lfoRaw = lfoMain.getNextSample();
+        if (!std::isfinite(lfoRaw))
+            lfoRaw = 0.5f; // Fallback to center if uninitialized
+
+        const float lfoBipolar = (lfoRaw * 2.0f) - 1.0f;
+        const float lfoCutoffOffset = lfoBipolar * lfoModulationDepth;
+
         float leftValue = 0.0f;
         float rightValue = 0.0f;
 
@@ -827,34 +902,42 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
             if (!voice.active)
                 continue;
 
-            //oscilator
+            // Oscillator
             float voiceLeft = 0.0f;
             float voiceRight = 0.0f;
 
             voice.oscillator.getNextSample(voiceLeft, voiceRight);
 
-            //ADSR
+            // ADSR
             float amplitudeEnvelopeValue = voice.amplitudeEnvelope.getNextSample();
 
             voiceLeft *= amplitudeEnvelopeValue;
             voiceRight *= amplitudeEnvelopeValue;
 
-            //FILTER
+            // FILTER
             float filterEnvelopeValue = voice.filterEnvelope.getNextSample();
             float baseCutoff = (float)cutoffSlider.getValue();
             float envelopeAmount = (float)filterEnvAmountSlider.getValue();
 
-            float modulatedCutoff = baseCutoff + filterEnvelopeValue * envelopeAmount;
+            // Total Cutoff Summation + LFO Offset
+            float modulatedCutoff = baseCutoff + (filterEnvelopeValue * envelopeAmount) + lfoCutoffOffset;
+
+            // Ensure finite bounds BEFORE setting cutoff to prevent filter lockup
+            if (!std::isfinite(modulatedCutoff))
+                modulatedCutoff = baseCutoff;
+
+            modulatedCutoff = juce::jlimit(20.0f, 20000.0f, modulatedCutoff);
+
             voice.filter.setCutoff(modulatedCutoff);
 
-            voiceLeft = voice.filter.processSample(voiceLeft,0);
-            voiceRight = voice.filter.processSample(voiceRight,1);
+            voiceLeft = voice.filter.processSample(voiceLeft, 0);
+            voiceRight = voice.filter.processSample(voiceRight, 1);
 
-            //MIX
-            leftValue += voiceLeft; 
+            // MIX
+            leftValue += voiceLeft;
             rightValue += voiceRight;
 
-            //deactivate voice after release
+            // Deactivate voice after release
             if (!voice.amplitudeEnvelope.isActive())
             {
                 voice.active = false;
@@ -867,14 +950,12 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
         rightValue *= gain;
 
         // Panning
-        float panAngle =
-            (pan + 1.0f) * 0.25f *
-            juce::MathConstants<float>::pi;
+        float panAngle = (pan + 1.0f) * 0.25f * juce::MathConstants<float>::pi;
 
         float leftGain = std::cos(panAngle);
         float rightGain = std::sin(panAngle);
 
-        //limiter and safeguard
+        // Limiter and safeguard
         if (!std::isfinite(leftValue) || !std::isfinite(rightValue))
         {
             leftValue = 0.0f;
@@ -913,7 +994,6 @@ void MainComponent::releaseResources()
 //==============================================================================
 void MainComponent::paint (juce::Graphics& g)
 {
-    // (Our component is opaque, so we must completely fill the background with a solid colour)
     g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId));
     g.setFont(30.0f);
     g.setColour(juce::Colours::white);
@@ -1015,13 +1095,15 @@ bool MainComponent::keyStateChanged(bool isKeyDown)
 
 void MainComponent::startVoice(int midiNote)
 {
+    lfoMain.reset();
+
     if (!polyMode)
     {
         Voice& voice = voices[0];
 
         voice.midiNote = midiNote;
 
-        voice.oscillator.setFrequency((float)juce::MidiMessage::getMidiNoteInHertz(midiNote));
+        voice.oscillator.setFrequency(static_cast<float>(juce::MidiMessage::getMidiNoteInHertz(midiNote)));
 
         voice.oscillator.setWaveform(waveformBox.getSelectedId());
 
@@ -1077,7 +1159,7 @@ void MainComponent::startVoice(int midiNote)
 
     voiceToUse->midiNote = midiNote;
 
-    voiceToUse->oscillator.setFrequency((float)juce::MidiMessage::getMidiNoteInHertz(midiNote));
+    voiceToUse->oscillator.setFrequency(static_cast<float>(juce::MidiMessage::getMidiNoteInHertz(midiNote)));
 
     voiceToUse->oscillator.setWaveform(waveformBox.getSelectedId());
 
@@ -1130,4 +1212,14 @@ void MainComponent::handleIncomingMidiMessage(
 
         stopVoice(midiNote);
     }
+}
+
+bool MainComponent::isAnyVoiceActive() const
+{
+    for (const auto& voice : voices)
+    {
+        if (voice.active.load(std::memory_order_relaxed))
+            return true;
+    }
+    return false;
 }

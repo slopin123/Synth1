@@ -1,5 +1,6 @@
 #pragma once
 #include <JuceHeader.h>
+#include <array>
 #include <cmath>
 #include <vector>
 
@@ -9,34 +10,29 @@ struct LfoPoint
     float tension = 0.0f;
 };
 
-class LfoEditor : public juce::Component, private juce::Timer
+class LfoEditor : public juce::Component
 {
 public:
-    enum class LoopMode
-    {
-        OneShot,
-        Loop,
-        PingPong
-    };
-
     LfoEditor();
-    ~LfoEditor() override;
+    ~LfoEditor() override = default;
+
+    // Callback to push updated 512-point curve data directly to LfoMain
+    std::function<void(const std::array<float, 512>&)> onTableUpdated;
+
+    void notifyTableUpdated();
+
+    // Synchronize playhead animation directly from LfoMain's audio phase
+    void setAudioPhase(float phase, bool isVoiceActive) noexcept;
 
     void paint(juce::Graphics& g) override;
     void mouseDown(const juce::MouseEvent& event) override;
     void mouseDrag(const juce::MouseEvent& event) override;
     void mouseMove(const juce::MouseEvent& event) override;
 
-    // Rate & Loop controls
-    void setRateHz(float newRateHz);
-    void setLoopMode(LoopMode newMode);
-    void trigger(); // Resets playhead to start (useful for OneShot / Reset)
-
-    // Evaluate curve value [0..1] at any phase [0..1]
+    // Evaluates Bezier curve value for rendering and table generation
     float getSampleAtPhase(float phase) const;
 
 private:
-    void timerCallback() override;
 
     juce::Point<float> pointToScreen(juce::Point<float> point) const;
     juce::Point<float> screenToPoint(juce::Point<float> position) const;
@@ -54,13 +50,9 @@ private:
     float dragStartMouseY = 0.0f;
     float dragStartTension = 0.0f;
 
-    // Animation & Playback state
-    float rateHz = 1.0f;
-    float currentPhase = 0.0f;
-    bool pingPongForward = true;
-    LoopMode loopMode = LoopMode::Loop;
-
-    uint32_t lastUpdateTimeMs = 0;
+    // Visual animation state driven solely by the audio thread
+    float currentAudioPhase = 0.0f;
+    bool active = false;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LfoEditor)
 };

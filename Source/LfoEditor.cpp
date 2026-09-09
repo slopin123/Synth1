@@ -1,6 +1,20 @@
 #include "LfoEditor.h"
 
-// Bezier curve
+// Bezier Curve Math
+static float applyExponentialTension(float t, float tension)
+{
+    if (std::abs(tension) < 0.001f)
+        return t;
+
+    float absTension = std::abs(tension);
+    float power = std::pow(10.0f, absTension * 1.3f);
+
+    if (tension > 0.0f)
+        return std::pow(t, power);
+
+    return 1.0f - std::pow(1.0f - t, power);
+}
+
 static juce::Point<float> evaluateBezierSegment(
     juce::Point<float> p1,
     juce::Point<float> p2,
@@ -10,24 +24,9 @@ static juce::Point<float> evaluateBezierSegment(
     float x = juce::jmap(t, p1.x, p2.x);
 
     if (std::abs(tension) < 0.001f || std::abs(p1.y - p2.y) < 0.0001f)
-    {
         return { x, juce::jmap(t, p1.y, p2.y) };
-    }
 
-    float absTension = std::abs(tension);
-    float power = std::pow(10.0f, absTension * 1.3f);
-
-    float curvedT = 0.0f;
-
-    if (tension > 0.0f)
-    {
-        curvedT = std::pow(t, power);
-    }
-    else
-    {
-        curvedT = 1.0f - std::pow(1.0f - t, power);
-    }
-
+    float curvedT = applyExponentialTension(t, tension);
     float y = juce::jmap(curvedT, p1.y, p2.y);
 
     return { x, y };
@@ -38,15 +37,56 @@ LfoEditor::LfoEditor()
     setMouseCursor(juce::MouseCursor::NormalCursor);
 }
 
+void LfoEditor::setAudioPhase(float phase, bool isVoiceActive) noexcept
+{
+    currentAudioPhase = phase;
+    active = isVoiceActive;
+    repaint();
+}
+
+void LfoEditor::notifyTableUpdated()
+{
+    if (onTableUpdated != nullptr)
+    {
+        std::array<float, 512> table{};
+        for (int i = 0; i < 512; ++i)
+        {
+            float phase = i / 511.0f;
+            table[i] = getSampleAtPhase(phase);
+        }
+        onTableUpdated(table);
+    }
+}
+
+float LfoEditor::getSampleAtPhase(float phase) const
+{
+    if (points.empty()) return 0.0f;
+    if (phase <= points.front().pos.x) return points.front().pos.y;
+    if (phase >= points.back().pos.x) return points.back().pos.y;
+
+    for (size_t i = 0; i < points.size() - 1; ++i)
+    {
+        if (phase >= points[i].pos.x && phase <= points[i + 1].pos.x)
+        {
+            float segmentWidth = points[i + 1].pos.x - points[i].pos.x;
+            if (segmentWidth < 0.0001f) return points[i].pos.y;
+
+            float t = (phase - points[i].pos.x) / segmentWidth;
+            return evaluateBezierSegment(points[i].pos, points[i + 1].pos, points[i].tension, t).y;
+        }
+    }
+
+    return 0.0f;
+}
+
 void LfoEditor::paint(juce::Graphics& g)
 {
     auto bounds = getLocalBounds().toFloat();
 
-    // Background
     g.fillAll(juce::Colours::black);
 
     // Grid
-    g.setColour(juce::Colours::darkgrey);
+    g.setColour(juce::Colours::darkgrey.withAlpha(0.5f));
     for (int i = 0; i <= 8; ++i)
     {
         float x = bounds.getX() + (i / 8.0f) * bounds.getWidth();
@@ -76,9 +116,7 @@ void LfoEditor::paint(juce::Graphics& g)
             for (int s = 1; s <= subdivisions; ++s)
             {
                 float t = s / static_cast<float>(subdivisions);
-
                 juce::Point<float> curvePt = evaluateBezierSegment(p1, p2, tension, t);
-
                 path.lineTo(pointToScreen(curvePt));
             }
         }
@@ -87,11 +125,25 @@ void LfoEditor::paint(juce::Graphics& g)
     g.setColour(juce::Colours::white);
     g.strokePath(path, juce::PathStrokeType(1.5f));
 
+    // Render Playhead (Synced directly from audio phase)
+    if (active)
+    {
+        float currentValue = getSampleAtPhase(currentAudioPhase);
+        auto playheadScreenPos = pointToScreen({ currentAudioPhase, currentValue });
+
+        // Vertical playhead line
+        g.setColour(juce::Colours::orange.withAlpha(0.8f));
+        g.drawVerticalLine(juce::roundToInt(playheadScreenPos.x), bounds.getY(), bounds.getBottom());
+
+        // Intersecting ball on the curve
+        g.setColour(juce::Colours::orange);
+        g.fillEllipse(playheadScreenPos.x - 5.0f, playheadScreenPos.y - 5.0f, 10.0f, 10.0f);
+    }
+
     // Tension handles
     for (size_t i = 0; i < points.size() - 1; ++i)
     {
         auto handlePos = getTensionHandlePosition(static_cast<int>(i));
-
         float radius = (static_cast<int>(i) == selectedTension) ? 5.0f : 3.5f;
 
         g.setColour(juce::Colours::cyan);
@@ -102,7 +154,6 @@ void LfoEditor::paint(juce::Graphics& g)
     for (size_t i = 0; i < points.size(); ++i)
     {
         auto position = pointToScreen(points[i].pos);
-
         float radius = (static_cast<int>(i) == selectedPoint) ? 7.0f : 5.0f;
 
         g.setColour(juce::Colours::white);
@@ -115,7 +166,6 @@ void LfoEditor::mouseDown(const juce::MouseEvent& event)
     selectedPoint = -1;
     selectedTension = -1;
 
-    // Right-click: Delete node or Insert node
     if (event.mods.isRightButtonDown())
     {
         int point = findPointAt(event.position);
@@ -126,6 +176,7 @@ void LfoEditor::mouseDown(const juce::MouseEvent& event)
                 return;
 
             points.erase(points.begin() + point);
+            notifyTableUpdated();
             repaint();
             return;
         }
@@ -138,6 +189,7 @@ void LfoEditor::mouseDown(const juce::MouseEvent& event)
             {
                 points.insert(points.begin() + static_cast<ptrdiff_t>(i) + 1, { newPoint, 0.0f });
                 selectedPoint = static_cast<int>(i) + 1;
+                notifyTableUpdated();
                 repaint();
                 return;
             }
@@ -145,7 +197,6 @@ void LfoEditor::mouseDown(const juce::MouseEvent& event)
         return;
     }
 
-    // Left-click: Select node or tension handle
     int hitPoint = findPointAt(event.position);
     if (hitPoint >= 0)
     {
@@ -169,7 +220,6 @@ void LfoEditor::mouseDown(const juce::MouseEvent& event)
 
 void LfoEditor::mouseDrag(const juce::MouseEvent& event)
 {
-    // Dragging a node point
     if (selectedPoint >= 0)
     {
         auto newPoint = screenToPoint(event.position);
@@ -191,11 +241,12 @@ void LfoEditor::mouseDrag(const juce::MouseEvent& event)
 
         points[selectedPoint].pos = newPoint;
         setMouseCursor(juce::MouseCursor::DraggingHandCursor);
+
+        notifyTableUpdated();
         repaint();
         return;
     }
 
-    // Dragging a curve tension handle
     if (selectedTension >= 0)
     {
         float deltaY = dragStartMouseY - event.position.y;
@@ -213,23 +264,22 @@ void LfoEditor::mouseDrag(const juce::MouseEvent& event)
 
         points[selectedTension].tension = juce::jlimit(-0.95f, 0.95f, newTension);
         setMouseCursor(juce::MouseCursor::UpDownResizeCursor);
+
+        notifyTableUpdated();
         repaint();
     }
 }
 
 void LfoEditor::mouseMove(const juce::MouseEvent& event)
 {
-    // Check if mouse is hovering over a tension handle
     if (findTensionHandleAt(event.position) >= 0)
     {
-        setMouseCursor(juce::MouseCursor::UpDownResizeCursor); // Vertical scroll/drag cursor
+        setMouseCursor(juce::MouseCursor::UpDownResizeCursor);
     }
-    // Check if mouse is hovering over a node point
     else if (findPointAt(event.position) >= 0)
     {
         setMouseCursor(juce::MouseCursor::DraggingHandCursor);
     }
-    // Default background cursor
     else
     {
         setMouseCursor(juce::MouseCursor::NormalCursor);

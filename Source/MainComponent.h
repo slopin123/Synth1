@@ -6,14 +6,9 @@
 #include <set>
 #include "Oscillator.h"
 #include "LfoEditor.h"
+#include "LfoMain.h"
 
-//==============================================================================
-/*
-    This component lives inside our window, and this is where you should put all
-    your controls and content.
-*/
-
-//POLYPHONIC
+//POLYPHONY
 class Voice
 {
 public:
@@ -23,16 +18,18 @@ public:
 
     Oscillator oscillator;
 
-    bool active = false;
+    std::atomic<bool> active{ false };
     bool noteHeld = false;
 
     SimpleLP filter;
     Envelope amplitudeEnvelope;
     Envelope filterEnvelope;
+
 };
 
 class MainComponent : public juce::AudioAppComponent,
                       public juce::MidiInputCallback
+
 {
 public:
     //==============================================================================
@@ -48,6 +45,8 @@ public:
     bool keyPressed(const juce::KeyPress& key) override;
     bool keyStateChanged(bool isKeyDown) override;
 
+    bool isAnyVoiceActive() const;
+
     void handleIncomingMidiMessage(
         juce::MidiInput* source,
         const juce::MidiMessage& message) override;
@@ -58,16 +57,16 @@ public:
     void resized() override;
 
 private:
-    //==============================================================================
-    // Your private member variables go here...
 
     Voice voices[16];
+    LfoMain lfoMain;
+    LfoEditor lfoEditor;
+
     std::set<int> keysDown;
 
     void startVoice(int midiNote);
     void stopVoice(int midiNote);
     int keyToMidiNote(int keyCode);
-
 
     double deviceSampleRate = 44100.0;
     
@@ -87,12 +86,18 @@ private:
 
     bool polyMode = true;
 
-    LfoEditor lfoEditor;
-
     juce::ToggleButton polyModeButton;
+
+    juce::ToggleButton retrigButton{ "Retrig" }; //lfo
 
     juce::MidiKeyboardState midiKeyboardState;
     std::unique_ptr<juce::MidiInput> midiInput;
+
+    // void timerCallback() override;
+
+    juce::Slider LfoRateSlider;
+    juce::ComboBox loopModeBox;
+    juce::ToggleButton lfoFilterEnableButton{ "LFO Cutoff" };
 
 
     juce::Slider frequencySlider;
@@ -174,6 +179,8 @@ private:
     
 
     juce::Random random;
+
+    std::unique_ptr<juce::VBlankAttachment> vBlankAttachment;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };
