@@ -4,23 +4,23 @@
               addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1">
   <MAINGROUP id="iil8o8" name="FirstSynth_SL">
     <GROUP id="{3B090994-AFA6-EFF7-800F-4659C7760334}" name="Source">
-      <GROUP id="{62BD7375-44A4-D46D-DDCC-5E0DF2F0DE85}" name="Oscilator">
-        <FILE id="K4vT5J" name="Oscillator.h" compile="0" resource="0" file="Source/Oscillator.h"/>
-        <FILE id="ONYpgJ" name="Oscillator.cpp" compile="1" resource="0" file="Source/Oscillator.cpp"/>
+      <GROUP id="{1344EEC5-A32B-9EE8-C287-1185DF425ACD}" name="Envelope">
+        <FILE id="RyRdHU" name="Envelope.cpp" compile="1" resource="0" file="Source/Envelope/Envelope.cpp"/>
+        <FILE id="NHL13K" name="Envelope.h" compile="0" resource="0" file="Source/Envelope/Envelope.h"/>
       </GROUP>
-      <GROUP id="{3A2FB0DB-29EB-30EE-E34C-3A6C2429DC6C}" name="Envelope">
-        <FILE id="Ejadkt" name="Envelope.h" compile="0" resource="0" file="Source/Envelope.h"/>
-        <FILE id="ssfSfg" name="Envelope.cpp" compile="1" resource="0" file="Source/Envelope.cpp"/>
+      <GROUP id="{FB5E61DE-8165-F62F-75DB-DCB99597FBC1}" name="Filters">
+        <FILE id="baE218" name="SimpleLP.cpp" compile="1" resource="0" file="Source/Filters/SimpleLP.cpp"/>
+        <FILE id="IhwEF3" name="SimpleLP.h" compile="0" resource="0" file="Source/Filters/SimpleLP.h"/>
       </GROUP>
-      <GROUP id="{FA1D950B-60C0-4B75-F694-5E38E6FEEB2C}" name="Filters">
-        <FILE id="ZSsjAV" name="SimpleLP.cpp" compile="1" resource="0" file="Source/SimpleLP.cpp"/>
-        <FILE id="ml7YX9" name="SimpleLP.h" compile="0" resource="0" file="Source/SimpleLP.h"/>
+      <GROUP id="{9FD744BA-C5C4-73B6-6F34-7C880F128DA9}" name="LFO">
+        <FILE id="dA83UC" name="LfoEditor.cpp" compile="1" resource="0" file="Source/LFO/LfoEditor.cpp"/>
+        <FILE id="nSl1Il" name="LfoEditor.h" compile="0" resource="0" file="Source/LFO/LfoEditor.h"/>
+        <FILE id="aXWsGp" name="LfoMain.cpp" compile="1" resource="0" file="Source/LFO/LfoMain.cpp"/>
+        <FILE id="hTu7FQ" name="LfoMain.h" compile="0" resource="0" file="Source/LFO/LfoMain.h"/>
       </GROUP>
-      <GROUP id="{524DDA16-9E50-2864-B3A9-6880500DEB30}" name="LFO">
-        <FILE id="mHJFlX" name="LfoMain.cpp" compile="1" resource="0" file="Source/LfoMain.cpp"/>
-        <FILE id="ibWZbo" name="LfoEditor.h" compile="0" resource="0" file="Source/LfoEditor.h"/>
-        <FILE id="HDoHVM" name="LfoMain.h" compile="0" resource="0" file="Source/LfoMain.h"/>
-        <FILE id="o3VrtO" name="LfoEditor.cpp" compile="1" resource="0" file="Source/LfoEditor.cpp"/>
+      <GROUP id="{366B822A-676B-E0DC-93BE-9EB9A5F73D4E}" name="Oscilator">
+        <FILE id="JLmMx5" name="Oscillator.cpp" compile="1" resource="0" file="Source/Oscilator/Oscillator.cpp"/>
+        <FILE id="Zy5i6f" name="Oscillator.h" compile="0" resource="0" file="Source/Oscilator/Oscillator.h"/>
       </GROUP>
       <FILE id="nMMh91" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
       <FILE id="YhgkQG" name="MainComponent.h" compile="0" resource="0" file="Source/MainComponent.h"/>
