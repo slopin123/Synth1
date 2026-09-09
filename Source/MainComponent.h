@@ -5,6 +5,7 @@
 #include "SimpleLP.h"
 #include <set>
 #include "Oscillator.h"
+#include "LfoEditor.h"
 
 //==============================================================================
 /*
@@ -85,6 +86,8 @@ private:
     float filterEnvAmount = 3000.0f;
 
     bool polyMode = true;
+
+    LfoEditor lfoEditor;
 
     juce::ToggleButton polyModeButton;
 

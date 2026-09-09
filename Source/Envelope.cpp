@@ -3,15 +3,24 @@
 
 static float applyCurve(float position, float curve)
 {
-    if (curve == 0.0f)
+    // Clamp curve parameter to expected range [-0.95, 0.95]
+    curve = juce::jlimit(-0.95f, 0.95f, curve);
+
+    if (std::abs(curve) < 0.001f)
         return position;
+
+    // Use base-10 exponential scaling to match the exact LFO curve behavior
+    float absCurve = std::abs(curve);
+    float power = std::pow(10.0f, absCurve * 1.3f);
 
     if (curve > 0.0f)
     {
-        return std::pow(position, 1.0f + curve * 10.0f); // position^1+curve*multiplier
+        // Convex bend (plucked / fast response)
+        return std::pow(position, power);
     }
 
-    return 1.0f - std::pow(1.0f - position, 1.0f + (-curve * 10.0f)); 
+    // Concave bend (slow logarithmic swells)
+    return 1.0f - std::pow(1.0f - position, power);
 }
 
 void Envelope::prepare(double newSampleRate)

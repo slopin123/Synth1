@@ -8,6 +8,10 @@ MainComponent::MainComponent()
     setSize (800, 600);
     setAudioChannels(0, 2);
 
+    //LFO Editor window
+    addAndMakeVisible(lfoEditor);
+    setSize(800, 600);
+
     //ADSR
     // amplitude Attack
     amplitudeAttackLabel.setText("Attack", juce::dontSendNotification);
@@ -686,6 +690,9 @@ void MainComponent::resized()
 
     polyModeButton.setBounds(20, 200, 100, 30);
 
+    // LFO
+    lfoEditor.setBounds(500, 350, getWidth() / 4, 150);
+
     // amp adsr
     amplitudeAttackLabel.setBounds(100, 350, 50, 20);
     amplitudeDecayLabel.setBounds(150, 350, 50, 20);
@@ -844,7 +851,7 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
             voiceRight = voice.filter.processSample(voiceRight,1);
 
             //MIX
-            leftValue += voiceLeft; //
+            leftValue += voiceLeft; 
             rightValue += voiceRight;
 
             //deactivate voice after release
